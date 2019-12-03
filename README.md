@@ -1,6 +1,6 @@
 # Command-Package
 
-This library was designed to make settings commands for Discord bots a simple and easy task. I wanted a library that would take care of command identification, and argument processing. The end product was something much bigger. This library includes all of the following and saves users the time of setting up their own command frameworks:
+This library was designed to make setting up commands for Discord bots a simple and easy task. I wanted a library that would take care of command identification, and argument processing. The end product was something much bigger. This library includes all of the following and saves users the time of setting up their own command frameworks:
 
 * Command identification
 * Command authorization
@@ -15,7 +15,7 @@ This library was designed to make settings commands for Discord bots a simple an
 
 This library also includes some simple utility classes which are useful for common tasks (such as randomization, string formatting, comparisons, etc).
 
-To download, please go to the [release page](https://github.com/TheCardinalSystem/Command-Package/releases).
+To download, please go to the [releases page](https://github.com/TheCardinalSystem/Command-Package/releases).
 
 ## Resources
 This project is solely owned by ***Cardinal System*** and _no individual_ may release implementing versions without accrediting the project owner. All updates are to be obtained at [the official github](https://github.com/TheCardinalSystem/Command-Packaget "Cardinal System Package") and no other location. This project is open source, so _developers may append/alter/implement_ the sources as they please (with due accredation).
