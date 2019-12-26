@@ -2,6 +2,12 @@ package com.Cardinal.CommandPackage.Handle.Command;
 
 import com.Cardinal.CommandPackage.Command.ICommand;
 
+/**
+ * An exception used to indicate a problem with registering a command.
+ * 
+ * @author Cardinal System
+ *
+ */
 public class CommandRegisterException extends Exception {
 
 	private static final long serialVersionUID = 1L;

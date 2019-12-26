@@ -22,7 +22,7 @@ public class DefaultCategories {
 
 		@Override
 		public int getLevel() {
-			return 13;
+			return 12;
 		}
 
 		@Override
@@ -83,6 +83,23 @@ public class DefaultCategories {
 			return "information";
 		}
 
+	}, MEMBER = new ICategory() {
+
+		@Override
+		public String getName() {
+			return "member";
+		}
+
+		@Override
+		public boolean canAccess(Member member) {
+			return true;
+		}
+
+		@Override
+		public int getLevel() {
+			return 10;
+		}
+
 	}, SUPPORT = new ICategory() {
 
 		@Override
@@ -92,7 +109,7 @@ public class DefaultCategories {
 
 		@Override
 		public int getLevel() {
-			return 12;
+			return 13;
 		}
 
 		@Override

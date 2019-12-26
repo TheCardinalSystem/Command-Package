@@ -6,12 +6,24 @@ import java.util.Set;
 
 import com.Cardinal.CommandPackage.Entity.ListEmbed;
 
+import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.requests.RestAction;
 
+/**
+ * A class used to facilitate the sending or turning of pages for
+ * {@link ListEmbed} objects. The only methods in this class that users should
+ * be using are
+ * {@link ListEmbedManager#sendEmbed(MessageChannel, User, ListEmbed)} and
+ * {@link ListEmbedManager#sendEmbed(TextChannel, User, ListEmbed)}.
+ * 
+ * @author Cardinal System
+ *
+ */
 public class ListEmbedManager {
 
 	/*
@@ -91,6 +103,14 @@ public class ListEmbedManager {
 		return embedManagers.values().stream().anyMatch(e -> e.contains(messageID));
 	}
 
+	/**
+	 * Sends the given {@link ListEmbed} to the given to the given channel, mapping
+	 * it to the given user.
+	 * 
+	 * @param channel the channel.
+	 * @param source  the user who requested the embed.
+	 * @param embed   the embed.
+	 */
 	public static void sendEmbed(TextChannel channel, User source, ListEmbed embed) {
 		ListEmbedManager manager;
 		if (embedManagers.containsKey(channel.getGuild().getId())) {
@@ -114,8 +134,54 @@ public class ListEmbedManager {
 		}
 	}
 
+	/**
+	 * Sends the given {@link ListEmbed} to the given to the given channel, mapping
+	 * it to the given user.
+	 * 
+	 * @param channel the channel.
+	 * @param source  the user who requested the embed.
+	 * @param embed   the embed.
+	 */
+	public static void sendEmbed(MessageChannel channel, User source, ListEmbed embed) {
+		ListEmbedManager manager;
+		if (channel.getType().equals(ChannelType.PRIVATE)) {
+			if (embedManagers.containsKey(source.getId())) {
+				manager = embedManagers.get(source.getId());
+			} else {
+				manager = new ListEmbedManager();
+				embedManagers.put(source.getId(), manager);
+			}
+		} else {
+			TextChannel t = (TextChannel) channel;
+			if (embedManagers.containsKey(t.getGuild().getId())) {
+				manager = embedManagers.get(t.getGuild().getId());
+			} else {
+				manager = new ListEmbedManager();
+				embedManagers.put(t.getGuild().getId(), manager);
+			}
+		}
+
+		manager.addEmbed(source.getId(), embed);
+		RestAction<Message> action = channel.sendMessage(embed.first());
+
+		if (embed.isMultiPaged()) {
+			action.queue(message -> {
+				message.addReaction("\u23EA").queue(a -> message.addReaction("\u2B05")
+						.queue(b -> message.addReaction("\u27A1").queue(c -> message.addReaction("\u23E9").queue())));
+				manager.addMessage(message.getId(), source.getId());
+			});
+		} else {
+			action.queue();
+		}
+	}
+
 	public static void changeEmbed(Message message, int option) {
-		ListEmbed embed = embedManagers.get(message.getGuild().getId()).get(message);
+		ListEmbed embed;
+		if (message.getGuild() != null) {
+			embed = embedManagers.get(message.getGuild().getId()).get(message);
+		} else {
+			embed = embedManagers.get(message.getPrivateChannel().getUser().getAvatarId()).get(message);
+		}
 
 		if (option == 0) {
 			message.editMessage(embed.first()).queue();

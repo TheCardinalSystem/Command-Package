@@ -8,6 +8,12 @@ import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
+/**
+ * A handy prefix command. This command must be added manually.
+ * 
+ * @author Cardinal System
+ *
+ */
 public class DefaultPrefixCommand implements ICommand {
 
 	@Override

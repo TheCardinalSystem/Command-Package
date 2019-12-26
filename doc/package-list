@@ -1,10 +1,1 @@
-com.Cardinal.CommandPackage.Command
-com.Cardinal.CommandPackage.Command.Category
-com.Cardinal.CommandPackage.Entity
-com.Cardinal.CommandPackage.Handle.Command
-com.Cardinal.CommandPackage.Handle.Concurrent
-com.Cardinal.CommandPackage.Handle.Entity
-com.Cardinal.CommandPackage.Handle.Event
 com.Cardinal.CommandPackage.Handle.Properties
-com.Cardinal.CommandPackage.Impl
-com.Cardinal.CommandPackage.Util

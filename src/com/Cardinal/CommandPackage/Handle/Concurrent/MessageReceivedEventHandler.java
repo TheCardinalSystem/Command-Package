@@ -1,21 +1,14 @@
 package com.Cardinal.CommandPackage.Handle.Concurrent;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import com.Cardinal.CommandPackage.Command.ArgumentTypes;
 import com.Cardinal.CommandPackage.Command.ICommand;
@@ -23,36 +16,57 @@ import com.Cardinal.CommandPackage.Command.ISpecialAccesCommand;
 import com.Cardinal.CommandPackage.Command.Category.DefaultCategories;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Properties.GuildAliasHandler;
+import com.Cardinal.CommandPackage.Handle.Properties.GuildPermissionsManager;
 import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 import com.Cardinal.CommandPackage.Impl.CommandClient;
 import com.Cardinal.CommandPackage.Util.ArgumentUtils;
+import com.Cardinal.CommandPackage.Util.ExceptionUtils;
 import com.Cardinal.CommandPackage.Util.MarkdownUtils;
 import com.Cardinal.CommandPackage.Util.NumberUtils;
 
 import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.Event;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
+/**
+ * A thread used for handling {@linkplain MessageReceivedEvent}s. Really, this
+ * should only be used by the command pakcage's build-in event adapter.
+ * 
+ * @author Cardinal System
+ *
+ */
 public class MessageReceivedEventHandler extends Thread {
 
-	private Event event;
+	private MessageReceivedEvent event;
 	private CommandRegistry registry;
+	private BiConsumer<Exception, MessageReceivedEvent> biConsumer = null;
+	public long startTime = 0;
 	/**
 	 * That's one big ass variable name.
 	 */
 	private static final Pattern NUMBER_FORMAT_EXCEPTION_EXTRACTION_PATTERN = Pattern
 			.compile("(?<=\\:\\s\\\").+(?=\\\"$)");
-	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd-HH.mm.ss");
 
-	public MessageReceivedEventHandler(Event event) {
-		super("MessageReceivedEventHandler: Event" + event.hashCode());
+	public MessageReceivedEventHandler(MessageReceivedEvent event) {
+		super("MessageReceivedEventHandler:" + event.getAuthor().getName() + ":" + event.hashCode());
 		this.event = event;
+	}
+
+	public MessageReceivedEventHandler(MessageReceivedEvent event,
+			BiConsumer<Exception, MessageReceivedEvent> errorHandler) {
+		super("MessageReceivedEventHandler:" + event.getAuthor().getName() + ":" + event.hashCode());
+		this.event = event;
+		this.biConsumer = errorHandler;
+	}
+
+	public MessageReceivedEvent getEvent() {
+		return event;
 	}
 
 	public boolean isReady() {
@@ -64,6 +78,12 @@ public class MessageReceivedEventHandler extends Thread {
 	}
 
 	@Override
+	public synchronized void start() {
+		startTime = System.nanoTime();
+		super.start();
+	}
+
+	@Override
 	public void run() {
 		if (registry == null)
 			throw new IllegalStateException("Handler not ready.");
@@ -72,15 +92,7 @@ public class MessageReceivedEventHandler extends Thread {
 				MessageReceivedEvent wrappedEvent = (MessageReceivedEvent) event;
 				setName("MessageHandler:" + ((MessageReceivedEvent) event).getMessageId());
 
-				String botChannel = wrappedEvent.getChannel().getType().equals(ChannelType.PRIVATE)
-						? wrappedEvent.getChannel().getId()
-						: PropertiesHandler.<String>getGuildProperty(wrappedEvent.getGuild(),
-								GuildProperties.BOT_CHANNEL);
-
-				// Make sure the event author is not a bot.
-				if (!wrappedEvent.getAuthor().isBot()
-						&& (botChannel == null || botChannel.equals(wrappedEvent.getChannel().getId()))) {
-
+				if (checkChannel(event.getChannel(), event.getGuild(), event.getAuthor())) {
 					String prefix = getPrefix(wrappedEvent);
 					String message = verifyMessage(wrappedEvent.getMessage().getContentRaw(), prefix);
 
@@ -101,7 +113,7 @@ public class MessageReceivedEventHandler extends Thread {
 							}
 
 							if (command != null) {
-								if (canAcess(wrappedEvent, command)) {
+								if (canAcess(wrappedEvent, command, registry)) {
 									ArgumentTypes[] types = command.getArgumentTypes();
 									if (!(types == null || types.length == 0)) {
 										if (!(parts.length - 1 < types.length) || hasOptional(types)) {
@@ -115,10 +127,10 @@ public class MessageReceivedEventHandler extends Thread {
 														errorArg(wrappedEvent.getChannel(), e.getCause(),
 																Integer.parseInt(e.getMessage()));
 													} catch (NumberFormatException e1) {
-														errorSyst(wrappedEvent.getChannel(), e);
+														errorSyst(event, e);
 													}
 												} else {
-													errorSyst(wrappedEvent.getChannel(), e);
+													errorSyst(event, e);
 												}
 											}
 											try {
@@ -131,10 +143,10 @@ public class MessageReceivedEventHandler extends Thread {
 														errorArg(wrappedEvent.getChannel(), e.getCause(),
 																Integer.parseInt(e.getMessage()));
 													} catch (NumberFormatException e1) {
-														errorSyst(wrappedEvent.getChannel(), e);
+														errorSyst(event, e);
 													}
 												} else {
-													errorSyst(wrappedEvent.getChannel(), e);
+													errorSyst(event, e);
 												}
 											}
 										} else {
@@ -144,7 +156,7 @@ public class MessageReceivedEventHandler extends Thread {
 										try {
 											command.execute(wrappedEvent, registry, prefix);
 										} catch (Exception e) {
-											errorSyst(wrappedEvent.getChannel(), e);
+											errorSyst(event, e);
 										}
 									}
 								} else {
@@ -161,6 +173,21 @@ public class MessageReceivedEventHandler extends Thread {
 		synchronized (event) {
 			event.notifyAll();
 		}
+	}
+
+	private boolean checkChannel(MessageChannel channel, Guild guild, User user) {
+		String botChannel = channel.getType().equals(ChannelType.PRIVATE) ? channel.getId()
+				: PropertiesHandler.<String>getGuildProperty(guild, GuildProperties.BOT_CHANNEL);
+
+		if (!user.isBot()
+				&& (botChannel == null || botChannel.equals(channel.getId())
+						|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId()))
+				|| channel.getType().equals(ChannelType.PRIVATE)) {
+			return true;
+		}
+
+		List<String> unboundUsers = PropertiesHandler.getGuildProperty(guild, GuildProperties.UNBOUND_USERS);
+		return unboundUsers != null && unboundUsers.contains(user.getId());
 	}
 
 	private Object[] processArguments(ICommand command, String[] parts, TextChannel channel, JDA jda) {
@@ -195,6 +222,8 @@ public class MessageReceivedEventHandler extends Thread {
 						throw new IllegalArgumentException(part + " is not a valid channel.");
 					} else if (types[i].equals(ArgumentTypes.USER_MENTION)) {
 						throw new IllegalArgumentException(part + " is not a valid user.");
+					} else if (types[i].equals(ArgumentTypes.ROLE_MENTION)) {
+						throw new IllegalArgumentException(part + " is not a valid role.");
 					}
 				}
 			} catch (RuntimeException | MalformedURLException e) {
@@ -216,15 +245,28 @@ public class MessageReceivedEventHandler extends Thread {
 			}
 		}
 		if (index > -1) {
-			String[] array = getArrayArgument(parts, index);
-			if (types[index - 1].equals(ArgumentTypes.INT_ARRAY)) {
-				args[index - 1] = Arrays.stream(array).mapToInt(Integer::parseInt).toArray();
-			} else {
-				args[index - 1] = array;
+			try {
+				String[] array = getArrayArgument(parts, index);
+				if (types[index - 1].equals(ArgumentTypes.INT_ARRAY)) {
+					args[index - 1] = Arrays.stream(array).mapToInt(Integer::parseInt).toArray();
+				} else if (types[index - 1].equals(ArgumentTypes.DOUBLE_ARRAY)) {
+					args[index - 1] = Arrays.stream(array).mapToDouble(Double::parseDouble).toArray();
+				} else if (types[index - 1].equals(ArgumentTypes.LONG_ARRAY)) {
+					args[index - 1] = Arrays.stream(array).mapToLong(Long::parseLong).toArray();
+				} else {
+					args[index - 1] = array;
+				}
+			} catch (NumberFormatException e) {
+				Matcher m = NUMBER_FORMAT_EXCEPTION_EXTRACTION_PATTERN.matcher(e.getMessage());
+				m.find();
+				throw new IllegalArgumentException(String.valueOf(index),
+						new IllegalArgumentException(MarkdownUtils.code(m.group()) + " is not a valid "
+								+ types[index - 1].toString().replaceAll("_", " ").toLowerCase() + ".", e));
 			}
 		}
 
 		return args;
+
 	}
 
 	private String[] getArrayArgument(String[] parts, int index) {
@@ -242,7 +284,8 @@ public class MessageReceivedEventHandler extends Thread {
 
 	private static String verifyMessage(String message, String prefix) {
 		// Check that the message starts with the prefix.
-		message = message.replaceAll("(^\\s+|(?<=\\s{1})\\s+)", "");
+		message = message.replaceAll("(^\\s+|(?<=\\s{1})\\s+)", "").replaceAll("(?<=\\<\\@)!", "");
+		String lowerCase = message.toLowerCase();
 		try {
 			while (Character.isWhitespace(message.charAt(0)))
 				message = message.substring(1);
@@ -252,13 +295,13 @@ public class MessageReceivedEventHandler extends Thread {
 		} catch (StringIndexOutOfBoundsException e) {
 		}
 
-		if (message.toLowerCase().startsWith(prefix)) {
+		if (lowerCase.startsWith(prefix)) {
 			// Makes sure the prefix is not the only thing in the message.
 			if (message.replaceAll("\\s+", "").equalsIgnoreCase(prefix)) {
 				return null;
 			}
 			return message;
-		} else if (message.toLowerCase().equals("prefix")) {
+		} else if (lowerCase.equals("prefix")) {
 			return message;
 		}
 		return null;
@@ -275,25 +318,12 @@ public class MessageReceivedEventHandler extends Thread {
 		return prefix.toLowerCase();
 	}
 
-	private String[] getSimilarSpellings(CommandRegistry registry, String command) {
-		Object[][] spells = registry.getCommandNames().stream()
-				.map(s -> new Object[] { s, LevenshteinDistance.getDefaultInstance().apply(s, command) })
-				.sorted((o1, o2) -> Integer.compare((int) o1[1], (int) o2[1])).toArray(Object[][]::new);
-		int average;
-		if (spells.length < 5) {
-			average = (int) spells[spells.length][1];
-		} else {
-			average = ((int) spells[0][1] + (int) spells[spells.length - 1][1]) / 2;
-		}
-		return Arrays.stream(spells).filter(t -> (int) t[1] <= average).map(o -> (String) o[0]).toArray(String[]::new);
-	}
-
 	private void errorAcc(MessageChannel channel, User user) {
 		channel.sendMessage(":warning: " + user.getAsMention() + " you do not have access to that command.").queue();
 	}
 
 	private void errorCom(MessageChannel channel, CommandRegistry registry, String command) {
-		String[] similarCommands = getSimilarSpellings(registry, command);
+		String[] similarCommands = ArgumentUtils.getSimilarSpellings(registry, command);
 		if (similarCommands.length > 5) {
 			similarCommands = Arrays.copyOfRange(similarCommands, 0, 4);
 		}
@@ -317,29 +347,11 @@ public class MessageReceivedEventHandler extends Thread {
 		channel.sendMessage(NumberUtils.toOrdinal(index) + " argument: " + e.getMessage()).queue();
 	}
 
-	private void errorSyst(MessageChannel channel, Exception e) {
-		e.printStackTrace();
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(os);
-		e.printStackTrace(ps);
-		String trace = os.toString();
-		try {
-			channel.sendMessage("A system error occurred. See details below:" + MarkdownUtils.codeBox(trace, "Java"))
-					.queue();
-		} catch (IllegalArgumentException e1) {
-			e1.printStackTrace();
-			try {
-				File log = new File(System.getProperty("user.dir"),
-						"errLog" + LocalDateTime.now().format(FORMATTER) + ".log");
-				FileOutputStream stream = new FileOutputStream(log);
-				stream.write(trace.getBytes());
-				stream.flush();
-				stream.close();
-				channel.sendFile(log, new MessageBuilder().append("A system error occurred. See attached log.").build())
-						.queue(s -> log.delete());
-			} catch (IOException e2) {
-				e2.printStackTrace();
-			}
+	private void errorSyst(MessageReceivedEvent event, Exception e) {
+		if (biConsumer != null) {
+			biConsumer.accept(e, event);
+		} else {
+			ExceptionUtils.sendSystemException(e, event.getChannel());
 		}
 	}
 
@@ -379,7 +391,8 @@ public class MessageReceivedEventHandler extends Thread {
 			if (part == null || part.isEmpty())
 				return Optional.ofNullable(part);
 			return type.isOptional() ? Optional.ofNullable(part) : part;
-		} else if (type.equals(ArgumentTypes.STRING_ARRAY) || type.equals(ArgumentTypes.INT_ARRAY)) {
+		} else if (type.equals(ArgumentTypes.STRING_ARRAY) || type.equals(ArgumentTypes.INT_ARRAY)
+				|| type.equals(ArgumentTypes.LONG_ARRAY) || type.equals(ArgumentTypes.DOUBLE_ARRAY)) {
 			throw new ArrayIndexOutOfBoundsException();
 		} else if (type.equals(ArgumentTypes.USER_MENTION)) {
 			if (part == null || part.isEmpty())
@@ -393,6 +406,11 @@ public class MessageReceivedEventHandler extends Thread {
 					? Optional.ofNullable(jda.getTextChannelById(ArgumentUtils.parseChannelMention(part)))
 					: jda.getTextChannelById(ArgumentUtils.parseChannelMention(part));
 
+		} else if (type.equals(ArgumentTypes.ROLE_MENTION)) {
+			if (part == null || part.isEmpty())
+				return Optional.ofNullable((Role) null);
+			return type.isOptional() ? Optional.ofNullable(jda.getRoleById(ArgumentUtils.parseRoleMention(part)))
+					: jda.getRoleById(ArgumentUtils.parseRoleMention(part));
 		} else if (type.equals(ArgumentTypes.URL)) {
 			if (part == null || part.isEmpty())
 				return Optional.ofNullable((URL) null);
@@ -403,7 +421,7 @@ public class MessageReceivedEventHandler extends Thread {
 		}
 	}
 
-	private boolean canAcess(MessageReceivedEvent event, ICommand command) {
+	private boolean canAcess(MessageReceivedEvent event, ICommand command, CommandRegistry registry) {
 		if (CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId())) {
 			return true;
 		}
@@ -414,7 +432,8 @@ public class MessageReceivedEventHandler extends Thread {
 				return true;
 			}
 		}
-		return command.getCategory().canAccess(((MessageReceivedEvent) event).getMember())
+
+		return GuildPermissionsManager.getManager(event.getGuild(), registry).canAccess(event.getAuthor(), command)
 				|| command instanceof ISpecialAccesCommand;
 	}
 

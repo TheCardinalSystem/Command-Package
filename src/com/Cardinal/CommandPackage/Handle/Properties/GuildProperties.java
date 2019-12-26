@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import com.Cardinal.CommandPackage.Impl.StringListTypeToken;
+import com.Cardinal.CommandPackage.Impl.UserAccessMapTypeToken;
+
 /**
  * An enumeration of common properties that are different for each guild. The
  * command package uses all these properties when processing events.
@@ -40,7 +43,20 @@ public enum GuildProperties {
 	 * Guilds have the option to set a bot channel. The bot will only listen in the
 	 * bot channel. This is a channel ID, and is saved as a string.
 	 */
-	BOT_CHANNEL("channel", String.class);
+	BOT_CHANNEL("channel", String.class),
+	/**
+	 * Guild administrators can give specific users access to specific commands.
+	 * This is a map with Long keys and String list values. The keys represent a
+	 * user ID, and the values represent commands which the user has access to.
+	 */
+	USER_ACCESS("userAccess", new UserAccessMapTypeToken().getType()),
+	/**
+	 * Guild users who can execute commands outside of the bot channel (see
+	 * {@link GuildProperties#BOT_CHANNEL}). This is a list of user IDs. The name
+	 * "UNBOUND_USERS" is a little.. eh. But I couldn't think of something
+	 * better.
+	 */
+	UNBOUND_USERS("unboundUsers", new StringListTypeToken().getType());
 
 	private String s;
 	private Type type;
