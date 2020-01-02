@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 
 import com.Cardinal.CommandPackage.Util.ColorUtils;
 
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.entities.MessageEmbed;
-import net.dv8tion.jda.core.entities.MessageEmbed.Field;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 
 /**
  * I class used to create embed objects in an ordered list/paged fashion. If

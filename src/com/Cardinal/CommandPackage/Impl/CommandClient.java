@@ -13,10 +13,10 @@ import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Event.EventAdapter;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.EventListener;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.EventListener;
 
 public class CommandClient {
 
@@ -60,7 +60,6 @@ public class CommandClient {
 		adapter = errorHandler == null ? new EventAdapter(registry, maxThreadPoolSize, timeout, listeners)
 				: new EventAdapter(registry, errorHandler, maxThreadPoolSize, timeout, listeners);
 		jda.addEventListener(adapter);
-		jda.addEventListener((Object[]) listeners);
 	}
 
 	/**

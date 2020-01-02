@@ -1,7 +1,7 @@
 package com.Cardinal.CommandPackage.Handle.Properties;
 
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * A template for a listener which notified when a bot, guild, or user property

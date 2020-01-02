@@ -119,6 +119,9 @@ public class CommandRegistry {
 	 * @see CommandRegistry#registerAlias(String, String)
 	 */
 	public synchronized void registerAlias(ICommand command, String alias) throws CommandRegisterException {
+		if (alias.isEmpty()) {
+			throw new IllegalArgumentException("Aliases cannot be empty strings!");
+		}
 		if (aliases.containsKey(alias)) {
 			throw new CommandRegisterException(command,
 					new IllegalArgumentException("Alias \"" + alias + "\" is already registered."));

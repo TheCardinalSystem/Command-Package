@@ -9,8 +9,8 @@ import java.util.Set;
 import com.Cardinal.CommandPackage.Command.ICommand;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * A class used for handling guild-specific permissions (more specifically,

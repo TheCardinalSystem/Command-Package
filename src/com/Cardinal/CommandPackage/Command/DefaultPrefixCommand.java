@@ -6,7 +6,7 @@ import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
  * A handy prefix command. This command must be added manually.

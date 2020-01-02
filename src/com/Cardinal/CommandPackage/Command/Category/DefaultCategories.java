@@ -2,8 +2,8 @@ package com.Cardinal.CommandPackage.Command.Category;
 
 import com.Cardinal.CommandPackage.Impl.CommandClient;
 
-import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 
 /**
  * A nice little collection of default command categories.
@@ -33,7 +33,7 @@ public class DefaultCategories {
 
 		@Override
 		public boolean canAccess(Member member) {
-			return member.hasPermission(Permission.toEnumSet(2013274160))
+			return member.hasPermission(Permission.getPermissions(2013274160))
 					|| member.hasPermission(Permission.ADMINISTRATOR) || member.isOwner();
 		}
 
@@ -52,7 +52,7 @@ public class DefaultCategories {
 		@Override
 		public boolean canAccess(Member member) {
 			// Checks for the permissions KICK_MEMBERS, BAN_MEMBERS, MESSAGE_MANAGE
-			return member.hasPermission(Permission.toEnumSet(8198)) || member.hasPermission(Permission.ADMINISTRATOR)
+			return member.hasPermission(Permission.getPermissions(8198)) || member.hasPermission(Permission.ADMINISTRATOR)
 					|| member.isOwner();
 		}
 
@@ -70,7 +70,7 @@ public class DefaultCategories {
 
 		@Override
 		public boolean canAccess(Member member) {
-			return member.hasPermission(Permission.toEnumSet(1024));
+			return member.hasPermission(Permission.getPermissions(1024));
 		}
 
 		@Override

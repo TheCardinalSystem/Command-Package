@@ -6,7 +6,7 @@ import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Concurrent.WaitingEventHandler;
 import com.Cardinal.CommandPackage.Impl.CommandClient.CommandClientBuilder;
 
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
  * An template for Discord bot commands.

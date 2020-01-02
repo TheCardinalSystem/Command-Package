@@ -25,14 +25,14 @@ import com.Cardinal.CommandPackage.Util.ExceptionUtils;
 import com.Cardinal.CommandPackage.Util.MarkdownUtils;
 import com.Cardinal.CommandPackage.Util.NumberUtils;
 
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.Role;
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
  * A thread used for handling {@linkplain MessageReceivedEvent}s. Really, this
@@ -92,7 +92,8 @@ public class MessageReceivedEventHandler extends Thread {
 				MessageReceivedEvent wrappedEvent = (MessageReceivedEvent) event;
 				setName("MessageHandler:" + ((MessageReceivedEvent) event).getMessageId());
 
-				if (checkChannel(event.getChannel(), event.getGuild(), event.getAuthor())) {
+				if (event.getChannelType().equals(ChannelType.TEXT)
+						&& checkChannel(event.getChannel(), event.getGuild(), event.getAuthor())) {
 					String prefix = getPrefix(wrappedEvent);
 					String message = verifyMessage(wrappedEvent.getMessage().getContentRaw(), prefix);
 
@@ -179,10 +180,9 @@ public class MessageReceivedEventHandler extends Thread {
 		String botChannel = channel.getType().equals(ChannelType.PRIVATE) ? channel.getId()
 				: PropertiesHandler.<String>getGuildProperty(guild, GuildProperties.BOT_CHANNEL);
 
-		if (!user.isBot()
-				&& (botChannel == null || botChannel.equals(channel.getId())
-						|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId()))
-				|| channel.getType().equals(ChannelType.PRIVATE)) {
+		if (!user.isBot() && (botChannel == null || botChannel.equals(channel.getId())
+				|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId())
+				|| channel.getType().equals(ChannelType.PRIVATE))) {
 			return true;
 		}
 

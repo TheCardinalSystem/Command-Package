@@ -4,8 +4,8 @@ import java.util.Set;
 
 import com.Cardinal.CommandPackage.Impl.CommandClient.CommandClientBuilder;
 
-import net.dv8tion.jda.core.events.Event;
-import net.dv8tion.jda.core.hooks.EventListener;
+import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.hooks.EventListener;
 
 /**
  * A thread which waits for an event to be processed before passing it on to the
@@ -20,12 +20,12 @@ import net.dv8tion.jda.core.hooks.EventListener;
  */
 public class WaitingEventHandler extends Thread {
 
-	private Event event;
+	private GenericEvent event;
 	private Set<EventListener> listeners;
 	private long timeout;
 	public long startTime;
 
-	public WaitingEventHandler(Event event, long timeout, Set<EventListener> listeners) {
+	public WaitingEventHandler(GenericEvent event, long timeout, Set<EventListener> listeners) {
 		super("WaitingEventHandler:" + event.getClass().getSimpleName() + ":" + event.hashCode());
 		this.event = event;
 		this.listeners = listeners;

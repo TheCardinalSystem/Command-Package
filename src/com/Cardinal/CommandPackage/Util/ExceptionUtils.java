@@ -8,8 +8,8 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import net.dv8tion.jda.core.MessageBuilder;
-import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.MessageChannel;
 
 /**
  * A class of utility methods used for handling exceptions,
@@ -45,8 +45,8 @@ public class ExceptionUtils {
 				stream.write(trace.getBytes());
 				stream.flush();
 				stream.close();
-				channel.sendFile(log, new MessageBuilder().append("A system error occurred. See attached log.").build())
-						.queue(s -> log.delete());
+				channel.sendMessage(new MessageBuilder().append("A system error occurred. See attached log.").build())
+						.addFile(log).queue(s -> log.delete());
 			} catch (IOException e2) {
 				e2.printStackTrace();
 			}

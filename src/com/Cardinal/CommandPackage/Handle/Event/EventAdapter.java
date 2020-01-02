@@ -18,12 +18,12 @@ import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 import com.Cardinal.CommandPackage.Util.ReactionUtils;
 
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.events.Event;
-import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.react.MessageReactionAddEvent;
-import net.dv8tion.jda.core.hooks.EventListener;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.hooks.EventListener;
 
 /**
  * A class used for directing JDA events to their proper handlers.
@@ -36,7 +36,7 @@ public class EventAdapter implements EventListener {
 	private CommandRegistry registry;
 	private EventHandlerPool pool;
 	private Set<EventListener> listeners = new HashSet<EventListener>();
-	private ArrayDeque<Event> deque = new ArrayDeque<Event>();
+	private ArrayDeque<GenericEvent> deque = new ArrayDeque<GenericEvent>();
 	private int poolSize;
 	private long timeout;
 	private BiConsumer<Exception, MessageReceivedEvent> errorHandler = null;
@@ -87,7 +87,7 @@ public class EventAdapter implements EventListener {
 		if (!event.getUser().isBot()) {
 			String id = event.getMessageId();
 			if (ListEmbedManager.isListEmbed(id)) {
-				event.getChannel().getMessageById(id).queue(message -> {
+				event.getChannel().retrieveMessageById(id).queue(message -> {
 					ListEmbedManager.changeEmbed(message,
 							ReactionUtils.getListEmbedOption(event.getReactionEmote().getName()));
 				});
@@ -132,7 +132,7 @@ public class EventAdapter implements EventListener {
 	}
 
 	@Override
-	public void onEvent(Event event) {
+	public void onEvent(GenericEvent event) {
 		if (pool.isDraining()) {
 			deque.add(event);
 			return;
@@ -145,13 +145,13 @@ public class EventAdapter implements EventListener {
 		}
 	}
 
-	private WaitingEventHandler startWaitingHandler(Event event) {
+	private WaitingEventHandler startWaitingHandler(GenericEvent event) {
 		WaitingEventHandler handler = new WaitingEventHandler(event, timeout, listeners);
 		handler.start();
 		return handler;
 	}
 
-	private void queueEvent(Event event) {
+	private void queueEvent(GenericEvent event) {
 		WaitingEventHandler handler = startWaitingHandler(event);
 
 		if (event instanceof MessageReceivedEvent) {
@@ -167,7 +167,7 @@ public class EventAdapter implements EventListener {
 
 	private void drainDeque() {
 		for (int i = 0; i < poolSize; i++) {
-			Event event = deque.poll();
+			GenericEvent event = deque.poll();
 			if (event == null) {
 				break;
 			} else {
@@ -176,5 +176,6 @@ public class EventAdapter implements EventListener {
 		}
 
 	}
+
 
 }

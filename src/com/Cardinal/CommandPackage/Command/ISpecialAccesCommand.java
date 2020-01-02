@@ -3,8 +3,8 @@ package com.Cardinal.CommandPackage.Command;
 import com.Cardinal.CommandPackage.Command.Category.ICategory;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
  * A subinterface of {@link ICommand} which defines a command of special access.

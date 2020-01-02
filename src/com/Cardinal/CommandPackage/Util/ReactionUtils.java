@@ -3,7 +3,7 @@ package com.Cardinal.CommandPackage.Util;
 import com.Cardinal.CommandPackage.Handle.Entity.ListEmbedManager;
 import com.Cardinal.CommandPackage.Handle.Event.EventAdapter;
 
-import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.api.entities.Message;
 
 /**
  * This class is used by the {@link EventAdapter} class to handle reaction

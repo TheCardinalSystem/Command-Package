@@ -1,6 +1,6 @@
 package com.Cardinal.CommandPackage.Command.Category;
 
-import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.api.entities.Member;
 
 /**
  * A template for command categories.
