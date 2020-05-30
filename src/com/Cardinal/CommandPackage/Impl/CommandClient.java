@@ -86,13 +86,12 @@ public class CommandClient {
 	 * @throws MalformedURLException don't worry, this is never thrown
 	 */
 	public URL generateInviteLink() throws MalformedURLException {
-		return new URL(
-				"https://discordapp.com/oauth2/authorize?client_id=" + jda.getSelfUser().getId()
-						+ "&scope=bot&permissions="
-						+ Permission.getRaw(registry.getCommands().stream().map(ICommand::getPermissions)
-								.reduce((t, u) -> Stream.concat(t.stream(), u.stream())
-										.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permission.class))))
-								.get()));
+		EnumSet<Permission> set = registry.getCommands().stream().map(ICommand::getPermissions)
+				.reduce((t, u) -> Stream.concat(t.stream(), u.stream())
+						.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permission.class))))
+				.get();
+		return new URL("https://discordapp.com/oauth2/authorize?client_id=" + jda.getSelfUser().getId() + "&scope=bot"
+				+ (set.isEmpty() ? "" : "&permissions=" + Permission.getRaw(set)));
 	}
 
 	/**
