@@ -102,7 +102,22 @@ public class GuildPermissionsManager {
 	}
 
 	private void save() {
-		PropertiesHandler.setGuildProperty(guild, GuildProperties.USER_ACCESS, userAccess);
+		if (!userAccess.isEmpty()) {
+			Set<String> bad = new HashSet<String>();
+			for (String key : userAccess.keySet()) {
+				if (userAccess.get(key).isEmpty()) {
+					bad.add(key);
+				}
+			}
+			bad.forEach(userAccess::remove);
+			if (!userAccess.isEmpty()) {
+				PropertiesHandler.setGuildProperty(guild, GuildProperties.USER_ACCESS, userAccess);
+			} else {
+				PropertiesHandler.removeGuildProperty(guild, GuildProperties.USER_ACCESS);
+			}
+		} else {
+			PropertiesHandler.removeGuildProperty(guild, GuildProperties.USER_ACCESS);
+		}
 	}
 
 	private GuildPermissionsManager load() {

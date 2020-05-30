@@ -92,18 +92,19 @@ public class MessageReceivedEventHandler extends Thread {
 				MessageReceivedEvent wrappedEvent = (MessageReceivedEvent) event;
 				setName("MessageHandler:" + ((MessageReceivedEvent) event).getMessageId());
 
-				if (event.getChannelType().equals(ChannelType.TEXT)
-						&& checkChannel(event.getChannel(), event.getGuild(), event.getAuthor())) {
+				boolean isPrivate = event.getChannelType().equals(ChannelType.PRIVATE);
+				if ((event.getChannelType().equals(ChannelType.TEXT) || isPrivate)
+						&& checkChannel(event.getChannel(), isPrivate ? null : event.getGuild(), event.getAuthor())) {
 					String prefix = getPrefix(wrappedEvent);
-					String message = verifyMessage(wrappedEvent.getMessage().getContentRaw(), prefix);
 
-					if (message != null) {
-						if (message.equals("prefix")) {
-							wrappedEvent.getChannel().sendMessage("Command prefix: " + MarkdownUtils.code(prefix))
-									.queue();
-							message = null;
-						} else {
+					String message = wrappedEvent.getMessage().getContentRaw();
+					if (message.equalsIgnoreCase("prefix")) {
+						wrappedEvent.getChannel().sendMessage("Command prefix: " + MarkdownUtils.code(prefix)).queue();
+						message = null;
+					} else {
+						message = verifyMessage(message, prefix);
 
+						if (message != null) {
 							String[] parts = breakUpMessage(message, prefix);
 
 							ICommand command = registry.getCommand(parts[0]);
@@ -344,7 +345,7 @@ public class MessageReceivedEventHandler extends Thread {
 	}
 
 	private void errorArg(MessageChannel channel, Throwable e, int index) {
-		channel.sendMessage(NumberUtils.toOrdinal(index) + " argument: " + e.getMessage()).queue();
+		channel.sendMessage(NumberUtils.toOrdinal(index + 1) + " argument: " + e.getMessage()).queue();
 	}
 
 	private void errorSyst(MessageReceivedEvent event, Exception e) {

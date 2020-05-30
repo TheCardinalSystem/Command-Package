@@ -158,8 +158,6 @@ public class PropertiesHandler {
 		return new HashSet<String>(bot_properties.keySet());
 	}
 
-	private static JsonParser parser = new JsonParser();
-
 	/**
 	 * Sets the given bot property to the given value, using the given type
 	 * parameter to parse the old value associated with this property (so it can
@@ -172,7 +170,7 @@ public class PropertiesHandler {
 	public static synchronized void setBotProperty(String key, Object value, Type type) {
 
 		Object old = GSON.fromJson(bot_properties.get(key), type);
-		bot_properties.add(key, type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+		bot_properties.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 				: GSON.toJsonTree(value, type));
 		LISTENERS.forEach(p -> p.botPropertyChanged(key, old, value));
 		String json = bot_properties.toString();
@@ -255,10 +253,10 @@ public class PropertiesHandler {
 		JsonObject props;
 		if (GUILD_PROPERTIES.containsKey(id)) {
 			props = GUILD_PROPERTIES.get(id).getAsJsonObject();
-			old = type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+			old = type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 					: GSON.fromJson(props.get(key), type);
 			if (value != null) {
-				props.add(key, type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+				props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 						: GSON.toJsonTree(value, type));
 			} else {
 				props.remove(key);
@@ -267,7 +265,7 @@ public class PropertiesHandler {
 		} else if (value != null) {
 			old = null;
 			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
-			props.add(key, type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+			props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 					: GSON.toJsonTree(value, type));
 			GUILD_PROPERTIES.put(id, props);
 		} else {
@@ -420,7 +418,7 @@ public class PropertiesHandler {
 			props = USER_PROPERTIES.get(id);
 			old = GSON.fromJson(props.get(key), type);
 			if (value != null) {
-				props.add(key, type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+				props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 						: GSON.toJsonTree(value, type));
 			} else {
 				props.remove(key);
@@ -429,7 +427,7 @@ public class PropertiesHandler {
 		} else if (value != null) {
 			old = null;
 			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
-			props.add(key, type.equals(JsonElement.class) && value instanceof String ? parser.parse((String) value)
+			props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 					: GSON.toJsonTree(value));
 			USER_PROPERTIES.put(id, props);
 		} else {

@@ -52,8 +52,8 @@ public class DefaultCategories {
 		@Override
 		public boolean canAccess(Member member) {
 			// Checks for the permissions KICK_MEMBERS, BAN_MEMBERS, MESSAGE_MANAGE
-			return member.hasPermission(Permission.getPermissions(8198)) || member.hasPermission(Permission.ADMINISTRATOR)
-					|| member.isOwner();
+			return member.hasPermission(Permission.getPermissions(8198))
+					|| member.hasPermission(Permission.ADMINISTRATOR) || member.isOwner();
 		}
 
 		@Override
@@ -98,6 +98,23 @@ public class DefaultCategories {
 		@Override
 		public int getLevel() {
 			return 10;
+		}
+
+	}, FUN = new ICategory() {
+
+		@Override
+		public boolean canAccess(Member member) {
+			return true;
+		}
+
+		@Override
+		public int getLevel() {
+			return 11;
+		}
+
+		@Override
+		public String getName() {
+			return "fun";
 		}
 
 	}, SUPPORT = new ICategory() {

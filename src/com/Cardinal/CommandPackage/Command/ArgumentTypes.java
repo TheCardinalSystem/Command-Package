@@ -16,13 +16,17 @@ public class ArgumentTypes {
 			LONG_ARRAY = new ArgumentTypes("LONG_ARRAY"), USER_MENTION = new ArgumentTypes("USER_MENTION"),
 			CHANNEL_MENTION = new ArgumentTypes("CHANNEL_MENTION"), ROLE_MENTION = new ArgumentTypes("ROLE_MENTION"),
 			URL = new ArgumentTypes("URL"),
+
 			/**
 			 * If you want your command to process its own arguments, use this for
 			 * {@link ICommand#getArgumentTypes()}. A string array will be passed to
 			 * {@linkplain ICommand#execute(MessageReceivedEvent, CommandRegistry, String, Object...)},
-			 * and none of the arguments will run through the default processor.
+			 * and none of the arguments will run through the default processor.<br>
+			 * <br>
+			 * NOTE: Your command will not show any arguments on the default help command
+			 * unless it extends {@link ManuallyProcessedCommand}.
 			 */
-			CUSTOM;
+			CUSTOM = new ArgumentTypes("CUSTOM");
 
 	private String s;
 

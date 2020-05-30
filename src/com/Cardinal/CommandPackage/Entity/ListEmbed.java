@@ -1,5 +1,6 @@
 package com.Cardinal.CommandPackage.Entity;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +26,7 @@ public class ListEmbed {
 	private List<List<Field>> fields;
 	private List<EmbedBuilder> embeds;
 	private boolean flag = false, flag2 = false, rand = false;;
+	private LocalTime lastInteraction;
 
 	private EmbedBuilder b = new EmbedBuilder();
 	private int index = 0, pageCount;
@@ -388,7 +390,12 @@ public class ListEmbed {
 		return b;
 	}
 
+	public LocalTime getLastInterection() {
+		return lastInteraction;
+	}
+
 	private MessageEmbed get() {
+		lastInteraction = LocalTime.now();
 		if (rand) {
 			b.setColor(ColorUtils.getRandomColor());
 		}

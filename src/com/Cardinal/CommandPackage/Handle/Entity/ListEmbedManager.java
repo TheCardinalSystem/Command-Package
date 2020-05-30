@@ -1,6 +1,9 @@
 package com.Cardinal.CommandPackage.Handle.Entity;
 
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,6 +85,19 @@ public class ListEmbedManager {
 		return messageUser.containsKey(messageID);
 	}
 
+	private void purge1() {
+		Set<String> toRemove = new HashSet<String>();
+		LocalTime now = LocalTime.now();
+		for (String id : messageUser.keySet()) {
+			ListEmbed embed = userEmbeds.get(messageUser.get(id));
+			long difference = embed.getLastInterection().until(now, ChronoUnit.SECONDS);
+			if (difference > 60) {
+				toRemove.add(id);
+			}
+		}
+		toRemove.forEach(id -> userEmbeds.remove(messageUser.remove(id)));
+	}
+
 	/*
 	 * Static Code
 	 */
@@ -112,7 +128,17 @@ public class ListEmbedManager {
 	 * @param embed   the embed.
 	 */
 	public static void sendEmbed(TextChannel channel, User source, ListEmbed embed) {
+		purge();
+
 		ListEmbedManager manager;
+
+		String id;
+		if (source == null) {
+			id = "tmp";
+		} else {
+			id = source.getId();
+		}
+
 		if (embedManagers.containsKey(channel.getGuild().getId())) {
 			manager = embedManagers.get(channel.getGuild().getId());
 		} else {
@@ -120,14 +146,14 @@ public class ListEmbedManager {
 			embedManagers.put(channel.getGuild().getId(), manager);
 		}
 
-		manager.addEmbed(source.getId(), embed);
+		manager.addEmbed(id, embed);
 		RestAction<Message> action = channel.sendMessage(embed.first());
 
 		if (embed.isMultiPaged()) {
 			action.queue(message -> {
 				message.addReaction("\u23EA").queue(a -> message.addReaction("\u2B05")
 						.queue(b -> message.addReaction("\u27A1").queue(c -> message.addReaction("\u23E9").queue())));
-				manager.addMessage(message.getId(), source.getId());
+				manager.addMessage(message.getId(), id);
 			});
 		} else {
 			action.queue();
@@ -143,13 +169,23 @@ public class ListEmbedManager {
 	 * @param embed   the embed.
 	 */
 	public static void sendEmbed(MessageChannel channel, User source, ListEmbed embed) {
+		purge();
+
 		ListEmbedManager manager;
+
+		String id;
+		if (source == null) {
+			id = "tmp";
+		} else {
+			id = source.getId();
+		}
+
 		if (channel.getType().equals(ChannelType.PRIVATE)) {
-			if (embedManagers.containsKey(source.getId())) {
-				manager = embedManagers.get(source.getId());
+			if (embedManagers.containsKey(id)) {
+				manager = embedManagers.get(id);
 			} else {
 				manager = new ListEmbedManager();
-				embedManagers.put(source.getId(), manager);
+				embedManagers.put(id, manager);
 			}
 		} else {
 			TextChannel t = (TextChannel) channel;
@@ -161,14 +197,14 @@ public class ListEmbedManager {
 			}
 		}
 
-		manager.addEmbed(source.getId(), embed);
+		manager.addEmbed(id, embed);
 		RestAction<Message> action = channel.sendMessage(embed.first());
 
 		if (embed.isMultiPaged()) {
 			action.queue(message -> {
 				message.addReaction("\u23EA").queue(a -> message.addReaction("\u2B05")
 						.queue(b -> message.addReaction("\u27A1").queue(c -> message.addReaction("\u23E9").queue())));
-				manager.addMessage(message.getId(), source.getId());
+				manager.addMessage(message.getId(), id);
 			});
 		} else {
 			action.queue();
@@ -193,6 +229,10 @@ public class ListEmbedManager {
 			message.editMessage(embed.last()).queue();
 		}
 
+	}
+
+	private static void purge() {
+		embedManagers.values().forEach(ListEmbedManager::purge1);
 	}
 
 	public static ListEmbedManager getManager(Guild guild) {

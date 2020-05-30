@@ -106,7 +106,10 @@ public class DefaultHelpCommand implements ICommand {
 
 				builder.setTitle(command.getName());
 				builder.setDescription(command.getDescription());
-				String args = convertArguments(command.getArgumentTypes(), command.getArgumentNames());
+				String args = command instanceof ManuallyProcessedCommand
+						? convertArguments(((ManuallyProcessedCommand) command).getArgumentTypesString(),
+								command.getArgumentNames())
+						: convertArguments(command.getArgumentTypes(), command.getArgumentNames());
 				builder.addField("Aliases",
 						Arrays.toString(aliases.stream().map(s -> prefix + s).toArray(String[]::new))
 								.replaceAll("((?<=\\[)\\w{0}|\\w{0}(?=\\])|\\w{0}(?=,)|(?<=\\s)\\w{0})", "`"),
@@ -292,8 +295,18 @@ public class DefaultHelpCommand implements ICommand {
 		return "";
 	}
 
-	private String typeToString(ArgumentTypes type) {
+	private String convertArguments(String[] types, String[] names) {
+		if (types != null && types.length > 0) {
+			String temp = "";
+			for (int i = 0; i < types.length; i++) {
+				temp += "<" + types[i] + ": " + names[i] + ">";
+			}
+			return temp;
+		}
+		return "";
+	}
 
+	private String typeToString(ArgumentTypes type) {
 		String name = type.equals(ArgumentTypes.CHANNEL_MENTION) ? "Channel"
 				: type.equals(ArgumentTypes.USER_MENTION) ? "User"
 						: type.equals(ArgumentTypes.STRING_ARRAY) ? "Array" : type.toString().toLowerCase();

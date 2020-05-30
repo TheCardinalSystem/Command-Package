@@ -47,7 +47,11 @@ public interface ICommand {
 	 * {@link ArgumentTypes#STRING}, and parse the argument yourself in
 	 * {@link ICommand#execute(MessageReceivedEvent, CommandRegistry, String, Object...)}.<br>
 	 * <br>
-	 * NOTICE: Array and optional types must be the <i>last</i> arguments in the
+	 * NOTE: If you use {@link ArgumentTypes#CUSTOM}, your command will not show any
+	 * arguments on the default help command unless it extends
+	 * {@link ManuallyProcessedCommand}.<br>
+	 * <br>
+	 * NOTE: Array and optional types must be the <i>last</i> arguments in the
 	 * arguments array. Each command may only have one optional argument. Command
 	 * may not have both array and optional arguments.
 	 * 
