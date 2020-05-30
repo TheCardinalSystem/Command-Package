@@ -1,11 +1,14 @@
 package com.Cardinal.CommandPackage.Command;
 
+import java.util.EnumSet;
+
 import com.Cardinal.CommandPackage.Command.Category.DefaultCategories;
 import com.Cardinal.CommandPackage.Command.Category.ICategory;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
@@ -24,6 +27,11 @@ public class DefaultPrefixCommand implements ICommand {
 	@Override
 	public ICategory getCategory() {
 		return DefaultCategories.MANAGEMENT;
+	}
+
+	@Override
+	public EnumSet<Permission> getPermissions() {
+		return EnumSet.of(Permission.MESSAGE_ADD_REACTION);
 	}
 
 	@Override

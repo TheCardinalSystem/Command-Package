@@ -2,6 +2,7 @@ package com.Cardinal.CommandPackage.Command;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +22,7 @@ import com.Cardinal.CommandPackage.Util.MarkdownUtils;
 import com.Cardinal.CommandPackage.Util.StringUtils;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -60,6 +62,11 @@ public class DefaultHelpCommand implements ICommand {
 	@Override
 	public ICategory getCategory() {
 		return DefaultCategories.SUPPORT;
+	}
+
+	@Override
+	public EnumSet<Permission> getPermissions() {
+		return EnumSet.of(Permission.MESSAGE_READ, Permission.MESSAGE_WRITE);
 	}
 
 	@Override

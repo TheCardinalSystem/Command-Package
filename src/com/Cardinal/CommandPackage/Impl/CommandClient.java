@@ -1,20 +1,27 @@
 package com.Cardinal.CommandPackage.Impl;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.security.auth.login.LoginException;
 
+import com.Cardinal.CommandPackage.Command.ICommand;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Event.EventAdapter;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 
@@ -69,6 +76,23 @@ public class CommandClient {
 	 */
 	public JDA getJDA() {
 		return jda;
+	}
+
+	/**
+	 * Generates an invite link for this bot by combining the required permissions
+	 * for all the registered commands.
+	 * 
+	 * @return an invite link.
+	 * @throws MalformedURLException don't worry, this is never thrown
+	 */
+	public URL generateInviteLink() throws MalformedURLException {
+		return new URL(
+				"https://discordapp.com/oauth2/authorize?client_id=" + jda.getSelfUser().getId()
+						+ "&scope=bot&permissions="
+						+ Permission.getRaw(registry.getCommands().stream().map(ICommand::getPermissions)
+								.reduce((t, u) -> Stream.concat(t.stream(), u.stream())
+										.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permission.class))))
+								.get()));
 	}
 
 	/**

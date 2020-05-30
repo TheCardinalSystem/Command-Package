@@ -1,11 +1,14 @@
 package com.Cardinal.CommandPackage.Command;
 
+import java.util.EnumSet;
+
 import com.Cardinal.CommandPackage.Command.Category.DefaultCategories;
 import com.Cardinal.CommandPackage.Command.Category.ICategory;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Concurrent.WaitingEventHandler;
 import com.Cardinal.CommandPackage.Impl.CommandClient.CommandClientBuilder;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 /**
@@ -34,6 +37,15 @@ public interface ICommand {
 	 * @see DefaultCategories
 	 */
 	public ICategory getCategory();
+
+	/**
+	 * Get's the {@linkplain Permission permissions} required for the bot to process
+	 * this command. This is used to generate an invite link for the bot.
+	 * 
+	 * @return an {@link EnumSet} of the required permissions to execute this
+	 *         command.
+	 */
+	public EnumSet<Permission> getPermissions();
 
 	/**
 	 * Gets the argument types for the command parameters. If an argument is
