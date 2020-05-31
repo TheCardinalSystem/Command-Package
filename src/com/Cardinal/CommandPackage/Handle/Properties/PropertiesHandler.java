@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.Cardinal.CommandPackage.Command.ICommand;
 import com.Cardinal.CommandPackage.Handle.Concurrent.OutputManager;
 import com.Cardinal.CommandPackage.Handle.Concurrent.OutputTask;
 import com.Cardinal.CommandPackage.Impl.CommandClient;
@@ -24,6 +25,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
@@ -42,6 +44,14 @@ public class PropertiesHandler {
 			GUILD_PROP_DIR = new File(WORKING_DIRECTORY, "Properties/Guilds"),
 			USER_PROP_DIR = new File(WORKING_DIRECTORY, "Properties/Users"),
 			BOT_PROP_FILE = new File(WORKING_DIRECTORY, "Properties/Bot.json");
+
+	/**
+	 * This bot property key is connected to an array of {@linkplain Permission}s
+	 * that the bot requires to operate. This is used to generate an invite link for
+	 * the bot. If your bot needs permissions to operate certain <i>commands</i>,
+	 * look at {@link ICommand#getPermissions()}.
+	 */
+	public static final String BOT_PERMISSIONS_PROPERTY = "permissionsNeeded";
 
 	private static JsonObject bot_properties;
 	private static final Map<Long, JsonObject> GUILD_PROPERTIES = new HashMap<Long, JsonObject>(),
@@ -109,9 +119,19 @@ public class PropertiesHandler {
 				bot_properties = GSON.fromJson(new FileReader(BOT_PROP_FILE), JsonObject.class);
 			} catch (JsonSyntaxException | JsonIOException | FileNotFoundException e) {
 				e.printStackTrace();
+				bot_properties = new JsonObject();
 			}
+		} else {
+			bot_properties = new JsonObject();
 		}
 
+		if (!bot_properties.has(BOT_PERMISSIONS_PROPERTY)) {
+			setBotProperty(BOT_PERMISSIONS_PROPERTY,
+					new Permission[] { Permission.MESSAGE_READ, Permission.MESSAGE_WRITE,
+							Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_ADD_REACTION,
+							Permission.MESSAGE_MANAGE },
+					Permission[].class);
+		}
 	}
 
 	/**
@@ -170,8 +190,9 @@ public class PropertiesHandler {
 	public static synchronized void setBotProperty(String key, Object value, Type type) {
 
 		Object old = GSON.fromJson(bot_properties.get(key), type);
-		bot_properties.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
-				: GSON.toJsonTree(value, type));
+		bot_properties.add(key,
+				type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+						: GSON.toJsonTree(value, type));
 		LISTENERS.forEach(p -> p.botPropertyChanged(key, old, value));
 		String json = bot_properties.toString();
 		OutputTask task = new OutputTask(BOT_PROP_FILE, json.getBytes(), false);
@@ -256,8 +277,10 @@ public class PropertiesHandler {
 			old = type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
 					: GSON.fromJson(props.get(key), type);
 			if (value != null) {
-				props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
-						: GSON.toJsonTree(value, type));
+				props.add(key,
+						type.equals(JsonElement.class) && value instanceof String
+								? JsonParser.parseString((String) value)
+								: GSON.toJsonTree(value, type));
 			} else {
 				props.remove(key);
 			}
@@ -265,8 +288,9 @@ public class PropertiesHandler {
 		} else if (value != null) {
 			old = null;
 			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
-			props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
-					: GSON.toJsonTree(value, type));
+			props.add(key,
+					type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+							: GSON.toJsonTree(value, type));
 			GUILD_PROPERTIES.put(id, props);
 		} else {
 			old = null;
@@ -418,8 +442,10 @@ public class PropertiesHandler {
 			props = USER_PROPERTIES.get(id);
 			old = GSON.fromJson(props.get(key), type);
 			if (value != null) {
-				props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
-						: GSON.toJsonTree(value, type));
+				props.add(key,
+						type.equals(JsonElement.class) && value instanceof String
+								? JsonParser.parseString((String) value)
+								: GSON.toJsonTree(value, type));
 			} else {
 				props.remove(key);
 			}
@@ -427,8 +453,9 @@ public class PropertiesHandler {
 		} else if (value != null) {
 			old = null;
 			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
-			props.add(key, type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
-					: GSON.toJsonTree(value));
+			props.add(key,
+					type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+							: GSON.toJsonTree(value));
 			USER_PROPERTIES.put(id, props);
 		} else {
 			old = null;

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -86,10 +87,17 @@ public class CommandClient {
 	 * @throws MalformedURLException don't worry, this is never thrown
 	 */
 	public URL generateInviteLink() throws MalformedURLException {
-		EnumSet<Permission> set = registry.getCommands().stream().map(ICommand::getPermissions)
+		Optional<EnumSet<Permission>> optional = registry.getCommands().stream().map(ICommand::getPermissions)
 				.reduce((t, u) -> Stream.concat(t.stream(), u.stream())
-						.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permission.class))))
-				.get();
+						.collect(Collectors.toCollection(() -> EnumSet.noneOf(Permission.class))));
+
+		EnumSet<Permission> set = optional.isPresent() ? optional.get() : EnumSet.noneOf(Permission.class);
+
+		Permission[] botPerms = PropertiesHandler.getBotProperty(PropertiesHandler.BOT_PERMISSIONS_PROPERTY,
+				Permission[].class);
+		if (botPerms != null) {
+			set.addAll(Arrays.asList(botPerms));
+		}
 		return new URL("https://discordapp.com/oauth2/authorize?client_id=" + jda.getSelfUser().getId() + "&scope=bot"
 				+ (set.isEmpty() ? "" : "&permissions=" + Permission.getRaw(set)));
 	}

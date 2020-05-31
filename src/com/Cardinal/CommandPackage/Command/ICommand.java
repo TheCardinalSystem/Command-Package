@@ -6,6 +6,7 @@ import com.Cardinal.CommandPackage.Command.Category.DefaultCategories;
 import com.Cardinal.CommandPackage.Command.Category.ICategory;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Concurrent.WaitingEventHandler;
+import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 import com.Cardinal.CommandPackage.Impl.CommandClient.CommandClientBuilder;
 
 import net.dv8tion.jda.api.Permission;
@@ -44,6 +45,8 @@ public interface ICommand {
 	 * 
 	 * @return an {@link EnumSet} of the required permissions to execute this
 	 *         command.
+	 * 
+	 * @see PropertiesHandler#BOT_PERMISSIONS_PROPERTY
 	 */
 	public EnumSet<Permission> getPermissions();
 
