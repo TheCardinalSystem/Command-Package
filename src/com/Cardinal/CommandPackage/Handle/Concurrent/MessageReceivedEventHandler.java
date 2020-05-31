@@ -182,8 +182,11 @@ public class MessageReceivedEventHandler extends Thread {
 				: PropertiesHandler.<String>getGuildProperty(guild, GuildProperties.BOT_CHANNEL);
 
 		if (!user.isBot() && (botChannel == null || botChannel.equals(channel.getId())
-				|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId())
-				|| channel.getType().equals(ChannelType.PRIVATE))) {
+				|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId()))) {
+			return true;
+		}
+
+		if (channel.getType().equals(ChannelType.PRIVATE)) {
 			return true;
 		}
 

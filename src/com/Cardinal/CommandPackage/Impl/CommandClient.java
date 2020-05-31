@@ -1,6 +1,7 @@
 package com.Cardinal.CommandPackage.Impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +37,22 @@ public class CommandClient {
 	private JDA jda;
 	private CommandRegistry registry;
 	private EventAdapter adapter;
+
+	static {
+		System.err.println(
+				"---Command-Package---\n(https://github.com/TheCardinalSystem/Command-Package)\nAuthor: Cardinal System\nVersion: "
+						+ Updater.CURRENT_VERSION
+						+ "\nCredits: Powered by JDA (https://github.com/DV8FromTheWorld/JDA)\n- Apache Commons Lang (https://commons.apache.org/proper/commons-lang/)\n- Apache Commons Text (https://commons.apache.org/proper/commons-text/)\n- Gson (https://github.com/google/gson)\n- JSoup (https://jsoup.org/)\n---Command-Package---");
+
+		try {
+			String url = Updater.checkForUpdates();
+			if (url != null) {
+				LOGGER.log(Level.INFO, "\n\tAn update is available. Please download the update from: " + url + "\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * Constructs a {@link CommandClient} with the given parameters.

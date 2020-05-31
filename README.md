@@ -24,6 +24,7 @@ This project is solely owned by ***Cardinal System*** and _no individual_ may re
 This project is powered by:
 * [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/)
 * [Apache Commons Text](https://commons.apache.org/proper/commons-text/)
+* [JSoup](https://jsoup.org/)
 * [Gson](https://github.com/google/gson)
 * [JDA](https://github.com/DV8FromTheWorld/JDA)
 
@@ -33,6 +34,6 @@ Examples are yet to be added. If you have any Java expierence, you should be abl
 ## Support
 Support can be obtained at [the official github](Command-Package "Cardinal System Package") or the [not so official Discord](https://discordapp.com/invite/7Jh6Jd6 "Cardinal Support").
 
-###### Latest release v2.1.0 - Â©Copyright Cardinal System Developement 2020
+###### Latest release v2.1.0 - ©Copyright Cardinal System Developement 2020
 
 ###### Any misuse of latest versions is punishable by law.
