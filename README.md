@@ -1,6 +1,6 @@
 # Command-Package
 
-This library was designed to make setting up commands for Discord bots a simple and easy task. I wanted a library that would take care of command identification, and argument processing. The end product was something much bigger. This library includes all of the following and saves users the time of setting up their own command frameworks:
+This library was designed to make setting up commands for Discord bots a simple and easy task. I wanted a library that would take care of command identification and argument processing. The end product was something much bigger. This library includes all of the following and saves users the time of setting up their own command frameworks:
 
 * Command identification
 * Command authorization
