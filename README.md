@@ -29,11 +29,13 @@ This project is powered by:
 * [JDA](https://github.com/DV8FromTheWorld/JDA)
 
 ## Examples
-Examples are yet to be added. If you have any Java expierence, you should be able to get yourself started with the [`CommandClientBuilder`](https://github.com/TheCardinalSystem/Command-Package/blob/master/src/com/Cardinal/CommandPackage/Impl/CommandClient.java#L57).
+I use the Command Package in my YouTube series on Discord bots. You can learn how to use the Command Package there. Otherwise, if you have any Java expierence, you should be able to get yourself started with the [`CommandClientBuilder`](https://github.com/TheCardinalSystem/Command-Package/blob/master/src/com/Cardinal/CommandPackage/Impl/CommandClient.java#L57).
+
+[![](http://img.youtube.com/vi/K4u_dOxGyWo/0.jpg)](http://www.youtube.com/watch?v=K4u_dOxGyWo "Code Your Own Discord Bot 2020 | Episode 1 : Setting up")
 
 ## Support
 Support can be obtained at [the official github](Command-Package "Cardinal System Package") or the [not so official Discord](https://discordapp.com/invite/7Jh6Jd6 "Cardinal Support").
 
-###### Latest release v2.1.0 - ©Copyright Cardinal System Developement 2020
+###### Latest release v2.1.0 - Â©Copyright Cardinal System Developement 2020
 
 ###### Any misuse of latest versions is punishable by law.
