@@ -29,7 +29,7 @@ This project is powered by:
 * [JDA](https://github.com/DV8FromTheWorld/JDA)
 
 ## Examples
-I use the Command Package in my YouTube series on Discord bots. You can learn how to use the Command Package there. Otherwise, if you have any Java expierence, you should be able to get yourself started with the [`CommandClientBuilder`](https://github.com/TheCardinalSystem/Command-Package/blob/master/src/com/Cardinal/CommandPackage/Impl/CommandClient.java#L57).
+I use the Command Package in my YouTube series on Discord bots. You can learn how to use the Command Package there. Otherwise, if you have any Java expierence, you should be able to get yourself started with the [`CommandClientBuilder`](https://github.com/TheCardinalSystem/Command-Package/blob/master/src/com/Cardinal/CommandPackage/Impl/CommandClient.java#L157).
 
 [![](http://img.youtube.com/vi/K4u_dOxGyWo/0.jpg)](http://www.youtube.com/watch?v=K4u_dOxGyWo "Code Your Own Discord Bot 2020 | Episode 1 : Setting up")
 
