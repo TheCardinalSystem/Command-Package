@@ -14,7 +14,11 @@ public interface PropertyChangeListener {
 
 	public void guildPropertyChanged(Guild guild, String propertyName, Object oldValue, Object newValue);
 
+	public void guildPropertyChanged(long guildID, String propertyName, Object oldValue, Object newValue);
+
 	public void userPropertyChanged(User user, String propertyName, Object oldValue, Object newValue);
+
+	public void userPropertyChanged(long userID, String propertyName, Object oldValue, Object newValue);
 
 	public void botPropertyChanged(String propertyName, Object oldValue, Object newValue);
 

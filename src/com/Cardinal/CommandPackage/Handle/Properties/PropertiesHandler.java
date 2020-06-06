@@ -247,6 +247,19 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Determines whether the given guild's configuration has the given property
+	 * present.
+	 * 
+	 * @param guildID the guild's ID.
+	 * @param key     the property name
+	 * @return <b>true</b> : the guild config has the given property.<br>
+	 *         <b>false</b> : the guild config does not have the given property.
+	 */
+	public static boolean hasGuildProperty(long guildID, String key) {
+		return GUILD_PROPERTIES.containsKey(guildID) ? GUILD_PROPERTIES.get(guildID).has(key) : false;
+	}
+
+	/**
 	 * Sets the given property for the given guild to the given value.
 	 * 
 	 * @param guild    the guild.
@@ -255,6 +268,17 @@ public class PropertiesHandler {
 	 */
 	public static synchronized void setGuildProperty(Guild guild, GuildProperties property, Object value) {
 		setGuildProperty(guild, property.toString(), value, property.getType());
+	}
+
+	/**
+	 * Sets the given property for the given guild to the given value.
+	 * 
+	 * @param guildID  the guild's ID.
+	 * @param property the property.
+	 * @param value    the value.
+	 */
+	public static synchronized void setGuildProperty(long guildID, GuildProperties property, Object value) {
+		setGuildProperty(guildID, property.toString(), value, property.getType());
 	}
 
 	/**
@@ -307,6 +331,54 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Sets the given property for the given guild to the given value, using the
+	 * given type parameter to parse the old value associated with this property (so
+	 * it can passed to the {@linkplain PropertyChangeListener}s).
+	 * 
+	 * @param guildID the guild's ID.
+	 * @param key     the property name.
+	 * @param value   the property value.
+	 * @param type    the property type (When in doubt, use {@link JsonObject}).
+	 */
+	public static synchronized void setGuildProperty(long guildID, String key, Object value, Type type) {
+		final Object old;
+
+		JsonObject props;
+		if (GUILD_PROPERTIES.containsKey(guildID)) {
+			props = GUILD_PROPERTIES.get(guildID).getAsJsonObject();
+			old = type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+					: GSON.fromJson(props.get(key), type);
+			if (value != null) {
+				props.add(key,
+						type.equals(JsonElement.class) && value instanceof String
+								? JsonParser.parseString((String) value)
+								: GSON.toJsonTree(value, type));
+			} else {
+				props.remove(key);
+			}
+			GUILD_PROPERTIES.put(guildID, props);
+		} else if (value != null) {
+			old = null;
+			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
+			props.add(key,
+					type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+							: GSON.toJsonTree(value, type));
+			GUILD_PROPERTIES.put(guildID, props);
+		} else {
+			old = null;
+		}
+		LISTENERS.forEach(p -> p.guildPropertyChanged(guildID, key, old, value));
+		String json = GUILD_PROPERTIES.get(guildID).toString();
+		File dest = new File(GUILD_PROP_DIR, guildID + ".json");
+		OutputTask task = new OutputTask(dest, json.getBytes(), false);
+		try {
+			OutputManager.queue(task);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Gets the value of the given property for the given guild.
 	 * 
 	 * @param <T>      I forgot why I put this here...
@@ -316,6 +388,18 @@ public class PropertiesHandler {
 	 */
 	public static synchronized <T> T getGuildProperty(Guild guild, GuildProperties property) {
 		return getGuildProperty(guild, property.toString(), property.getType());
+	}
+
+	/**
+	 * Gets the value of the given property for the given guild.
+	 * 
+	 * @param <T>      I forgot why I put this here...
+	 * @param guildID  the guild's ID.
+	 * @param property the property.
+	 * @return the deserialized value.
+	 */
+	public static synchronized <T> T getGuildProperty(long guildID, GuildProperties property) {
+		return getGuildProperty(guildID, property.toString(), property.getType());
 	}
 
 	/**
@@ -340,6 +424,26 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Gets the value of the given property for the given guild, using the given
+	 * type parameter to deserialize it.
+	 * 
+	 * @param <T>     I forgot why I put this here...
+	 * @param guildID the guild's ID.
+	 * @param key     the property name.
+	 * @param type    the property type.
+	 * @return the deserialized value.
+	 */
+	public static synchronized <T> T getGuildProperty(long guildID, String key, Type type) {
+		if (GUILD_PROPERTIES.containsKey(guildID)) {
+			JsonObject props = GUILD_PROPERTIES.get(guildID);
+			if (props != null && props.has(key)) {
+				return GSON.fromJson(props.get(key), type);
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets a set of property names present in the configurations for the given
 	 * guild.
 	 * 
@@ -351,6 +455,17 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Gets a set of property names present in the configurations for the given
+	 * guild.
+	 * 
+	 * @param guildID the guild's ID.
+	 * @return the set.
+	 */
+	public static Set<String> getGuildProperties(long guildID) {
+		return new HashSet<String>(GUILD_PROPERTIES.get(guildID).keySet());
+	}
+
+	/**
 	 * Removes the given property from the given guild's configuration.
 	 * 
 	 * @param guild    the guild.
@@ -358,6 +473,16 @@ public class PropertiesHandler {
 	 */
 	public static synchronized void removeGuildProperty(Guild guild, GuildProperties property) {
 		removeGuildProperty(guild, property.toString(), property.getType());
+	}
+
+	/**
+	 * Removes the given property from the given guild's configuration.
+	 * 
+	 * @param guildID  the guild's ID.
+	 * @param property the property.
+	 */
+	public static synchronized void removeGuildProperty(long guildID, GuildProperties property) {
+		removeGuildProperty(guildID, property.toString(), property.getType());
 	}
 
 	/**
@@ -389,6 +514,33 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Removes the given property from the given guild's configuration, using the
+	 * given type parameter to parse the old value associated with this property (so
+	 * it can passed to the {@linkplain PropertyChangeListener}s).
+	 * 
+	 * @param guildID the guild's ID.
+	 * @param key     the property name.
+	 * @param type    the property type.
+	 */
+	public static synchronized void removeGuildProperty(long guildID, String key, Type type) {
+		final Object old;
+
+		JsonObject props;
+		props = GUILD_PROPERTIES.get(guildID);
+		old = GSON.fromJson(props.remove(key), type);
+		GUILD_PROPERTIES.put(guildID, props);
+		LISTENERS.forEach(p -> p.guildPropertyChanged(guildID, key, old, null));
+		String json = GUILD_PROPERTIES.get(guildID).toString();
+		File dest = new File(GUILD_PROP_DIR, guildID + ".json");
+		OutputTask task = new OutputTask(dest, json.getBytes(), false);
+		try {
+			OutputManager.queue(task);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Gets the configuration file for the given guild.
 	 * 
 	 * @param guild the guild.
@@ -399,7 +551,17 @@ public class PropertiesHandler {
 	}
 
 	/**
-	 * Delets the configuration file for the given guild.
+	 * Gets the configuration file for the given guild.
+	 * 
+	 * @param guildID the guild's ID.
+	 * @return the file.
+	 */
+	public static File getGuildPropertyFile(long guildID) {
+		return new File(GUILD_PROP_DIR, guildID + ".json");
+	}
+
+	/**
+	 * Deletes the configuration file for the given guild.
 	 * 
 	 * @param guild the guild.
 	 */
@@ -407,6 +569,17 @@ public class PropertiesHandler {
 		long id = guild.getIdLong();
 		GUILD_PROPERTIES.remove(id);
 		File dest = new File(GUILD_PROP_DIR, id + ".json");
+		dest.delete();
+	}
+
+	/**
+	 * Deletes the configuration file for the given guild.
+	 * 
+	 * @param guildID the guild's ID.
+	 */
+	public static void deleteGuildProperties(long guildID) {
+		GUILD_PROPERTIES.remove(guildID);
+		File dest = new File(GUILD_PROP_DIR, guildID + ".json");
 		dest.delete();
 	}
 
@@ -430,6 +603,19 @@ public class PropertiesHandler {
 	 */
 	public static boolean hasUserProperty(User user, String key) {
 		return USER_PROPERTIES.containsKey(user.getIdLong()) ? USER_PROPERTIES.get(user.getIdLong()).has(key) : false;
+	}
+
+	/**
+	 * Determines whether the given user's configuration has the given property
+	 * present.
+	 * 
+	 * @param userID the user's ID.
+	 * @param key    the property name
+	 * @return <b>true</b> : the user config has the given property.<br>
+	 *         <b>false</b> : the user config does not have the given property.
+	 */
+	public static boolean hasUserProperty(long userID, String key) {
+		return USER_PROPERTIES.containsKey(userID) ? USER_PROPERTIES.get(userID).has(key) : false;
 	}
 
 	/**
@@ -481,6 +667,53 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Sets the given property for the given user to the given value, using the
+	 * given type parameter to parse the old value associated with this property (so
+	 * it can passed to the {@linkplain PropertyChangeListener}s).
+	 * 
+	 * @param userID the user's ID.
+	 * @param key    the property name.
+	 * @param value  the property value.
+	 * @param type   the property type (When in doubt, use {@link JsonObject}).
+	 */
+	public static synchronized void setUserProperty(long userID, String key, Object value, Type type) {
+		final Object old;
+
+		JsonObject props;
+		if (USER_PROPERTIES.containsKey(userID)) {
+			props = USER_PROPERTIES.get(userID);
+			old = GSON.fromJson(props.get(key), type);
+			if (value != null) {
+				props.add(key,
+						type.equals(JsonElement.class) && value instanceof String
+								? JsonParser.parseString((String) value)
+								: GSON.toJsonTree(value, type));
+			} else {
+				props.remove(key);
+			}
+			USER_PROPERTIES.put(userID, props);
+		} else if (value != null) {
+			old = null;
+			props = GSON.toJsonTree(new HashMap<String, Object>()).getAsJsonObject();
+			props.add(key,
+					type.equals(JsonElement.class) && value instanceof String ? JsonParser.parseString((String) value)
+							: GSON.toJsonTree(value));
+			USER_PROPERTIES.put(userID, props);
+		} else {
+			old = null;
+		}
+		LISTENERS.forEach(p -> p.userPropertyChanged(userID, key, old, value));
+		String json = USER_PROPERTIES.get(userID).toString();
+		File dest = new File(USER_PROP_DIR, userID + ".json");
+		OutputTask task = new OutputTask(dest, json.getBytes(), false);
+		try {
+			OutputManager.queue(task);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Gets the value of the given property for the given user, using the given type
 	 * parameter to deserialize it.
 	 * 
@@ -502,6 +735,26 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Gets the value of the given property for the given user, using the given type
+	 * parameter to deserialize it.
+	 * 
+	 * @param <T>    I forgot why I put this here...
+	 * @param userID the user's ID.
+	 * @param key    the property name.
+	 * @param type   the property type.
+	 * @return the deserialized value.
+	 */
+	public static synchronized <T> T getUserProperty(long userID, String key, Type type) {
+		if (USER_PROPERTIES.containsKey(userID)) {
+			JsonObject props = USER_PROPERTIES.get(userID);
+			if (props != null && props.has(key)) {
+				return GSON.fromJson(props.get(key), type);
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets a set of property names present in the given user's configuration.
 	 * 
 	 * @param user the user.
@@ -509,6 +762,16 @@ public class PropertiesHandler {
 	 */
 	public static Set<String> getUserProperties(User user) {
 		return new HashSet<String>(USER_PROPERTIES.get(user.getIdLong()).keySet());
+	}
+
+	/**
+	 * Gets a set of property names present in the given user's configuration.
+	 * 
+	 * @param userID the user's ID.
+	 * @return the set.
+	 */
+	public static Set<String> getUserProperties(long userID) {
+		return new HashSet<String>(USER_PROPERTIES.get(userID).keySet());
 	}
 
 	/**
@@ -544,6 +807,37 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Removes the given property from the given user's configuration, using the
+	 * given type parameter to parse the old value associated with this property (so
+	 * it can passed to the {@linkplain PropertyChangeListener}s).
+	 * 
+	 * @param userID the user's ID.
+	 * @param key    the property name.
+	 * @param type   the property type.
+	 */
+	public static synchronized void removeUserProperty(long userID, String key, Type type) {
+		final Object old;
+
+		JsonObject props;
+		props = USER_PROPERTIES.get(userID);
+		JsonElement el = props.remove(key);
+		if (el == null) {
+			return;
+		}
+		old = GSON.fromJson(el, type);
+		USER_PROPERTIES.put(userID, props);
+		LISTENERS.forEach(p -> p.userPropertyChanged(userID, key, old, null));
+		String json = USER_PROPERTIES.get(userID).toString();
+		File dest = new File(USER_PROP_DIR, userID + ".json");
+		OutputTask task = new OutputTask(dest, json.getBytes(), false);
+		try {
+			OutputManager.queue(task);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Deletes the configuration file for the givne user.
 	 * 
 	 * @param user the user.
@@ -556,6 +850,17 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Deletes the configuration file for the givne user.
+	 * 
+	 * @param userID the user's ID.
+	 */
+	public static void deleteUserProperties(long userID) {
+		USER_PROPERTIES.remove(userID);
+		File dest = new File(USER_PROP_DIR, userID + ".json");
+		dest.delete();
+	}
+
+	/**
 	 * Gets the configuration file for the given user.
 	 * 
 	 * @param user the user.
@@ -563,6 +868,16 @@ public class PropertiesHandler {
 	 */
 	public static File getUserPropertyFile(User user) {
 		return new File(USER_PROP_DIR, user.getId() + ".json");
+	}
+
+	/**
+	 * Gets the configuration file for the given user.
+	 * 
+	 * @param userID the user's ID.
+	 * @return the file.
+	 */
+	public static File getUserPropertyFile(long userID) {
+		return new File(USER_PROP_DIR, userID + ".json");
 	}
 
 	/**
