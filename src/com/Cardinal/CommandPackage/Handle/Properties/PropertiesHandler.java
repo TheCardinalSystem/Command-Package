@@ -411,6 +411,15 @@ public class PropertiesHandler {
 	}
 
 	/**
+	 * Get's the ID's of all users who have saved properties.
+	 * 
+	 * @return a set of user ID's.
+	 */
+	public static Set<Long> getUsersProperties() {
+		return USER_PROPERTIES.keySet();
+	}
+
+	/**
 	 * Determines whether the given user's configuration has the given property
 	 * present.
 	 * 
