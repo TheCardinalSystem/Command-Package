@@ -1,7 +1,6 @@
 package com.Cardinal.CommandPackage.Impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public class CommandClient {
 			if (url != null) {
 				LOGGER.log(Level.INFO, "\n\tAn update is available. Please download the update from: " + url + "\n");
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

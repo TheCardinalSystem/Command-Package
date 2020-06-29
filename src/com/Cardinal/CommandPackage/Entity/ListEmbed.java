@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed.Field;
  */
 public class ListEmbed {
 
+	private String title;
 	private List<List<String>> pages;
 	private List<List<Field>> fields;
 	private List<EmbedBuilder> embeds;
@@ -97,7 +98,7 @@ public class ListEmbed {
 	 * @param fields the fields.
 	 */
 	public ListEmbed(String title, Field... fields) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		List<Field> content = Arrays.asList(fields);
 		this.fields = chopped(content, 10);
 		pageCount = this.fields.size();
@@ -113,7 +114,7 @@ public class ListEmbed {
 	 * @param unusedFlag an unused argument. This exists to avoid ambiguity.
 	 */
 	public ListEmbed(String title, List<Field> fields, boolean unusedFlag) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		List<Field> content = fields;
 		this.fields = chopped(content, 10);
 		pageCount = this.fields.size();
@@ -164,7 +165,7 @@ public class ListEmbed {
 	 * @param fields     the fields.
 	 */
 	public ListEmbed(boolean unusedFlag, String title, String author, String iconURL, List<Field> fields) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, iconURL);
 
 		this.fields = chopped(fields, 10);
@@ -183,7 +184,7 @@ public class ListEmbed {
 	 * @param fields  the fields.
 	 */
 	public ListEmbed(String title, String author, String url, String iconURL, Field... fields) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, url, iconURL);
 		List<Field> content = Arrays.asList(fields);
 		this.fields = chopped(content, 10);
@@ -222,7 +223,7 @@ public class ListEmbed {
 	 * 
 	 */
 	public ListEmbed(String title, List<String> content) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		pages = chopped(content, 15);
 		pageCount = this.pages.size();
 	}
@@ -236,7 +237,7 @@ public class ListEmbed {
 	 * 
 	 */
 	public ListEmbed(String title, String... content) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		pages = chopped(Arrays.asList(content), 15);
 		pageCount = this.pages.size();
 	}
@@ -283,7 +284,7 @@ public class ListEmbed {
 	 * 
 	 */
 	public ListEmbed(boolean unusedFlag, String title, String author, String iconURL, String... content) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, iconURL);
 		pages = chopped(Arrays.asList(content), 15);
 		pageCount = this.pages.size();
@@ -301,7 +302,7 @@ public class ListEmbed {
 	 * 
 	 */
 	public ListEmbed(String title, String author, String iconURL, List<String> content, boolean unusedFlag) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, iconURL);
 		pages = chopped(content, 15);
 		pageCount = this.pages.size();
@@ -348,7 +349,7 @@ public class ListEmbed {
 	 * @param content the list elements.
 	 */
 	public ListEmbed(String title, String author, String url, String iconURL, String... content) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, url, iconURL);
 		pages = chopped(Arrays.asList(content), 15);
 		pageCount = this.pages.size();
@@ -365,7 +366,7 @@ public class ListEmbed {
 	 * @param content the list elements.
 	 */
 	public ListEmbed(String title, String author, String url, String iconURL, List<String> content) {
-		b.setTitle(title);
+		b.setTitle(this.title = title);
 		b.setAuthor(author, url, iconURL);
 		pages = chopped(content, 15);
 		pageCount = this.pages.size();
@@ -460,14 +461,17 @@ public class ListEmbed {
 
 	private MessageEmbed buildEmbed(List<String> values, int page) {
 		b.clearFields();
-		b.addField("Page " + page + "/" + pageCount + ":", values.stream().collect(Collectors.joining("\n")), true);
+		b.addField(
+				title == null ? "Page " + page + "/" + pageCount + ":"
+						: title + "\nPage " + page + "/" + pageCount + ":",
+				values.stream().collect(Collectors.joining("\n")), true);
 		return b.build();
 	}
 
 	private MessageEmbed buildEmbedAlt(List<Field> values, int page) {
 		b.clearFields();
 		values.forEach(b::addField);
-		b.setTitle("Page " + page + "/" + pageCount);
+		b.setTitle(title == null ? "Page " + page + "/" + pageCount : title + "\nPage " + page + "/" + pageCount);
 		return b.build();
 	}
 
