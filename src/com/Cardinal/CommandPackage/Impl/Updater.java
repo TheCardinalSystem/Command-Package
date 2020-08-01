@@ -13,7 +13,7 @@ public class Updater {
 	 * This constant marks the version of the current command package
 	 * implementation.
 	 */
-	public static final String CURRENT_VERSION = "2.1.3";
+	public static final String CURRENT_VERSION = "2.2.0";
 
 	/**
 	 * Checks for any available updates for this command package. If an update is

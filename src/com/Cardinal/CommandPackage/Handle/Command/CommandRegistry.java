@@ -23,6 +23,7 @@ public class CommandRegistry {
 
 	private Map<String, ICommand> commands;
 	private Map<String, String> aliases;
+	private List<CommandRegisterListener> listeners;
 
 	/**
 	 * Constructs a new {@linkplain CommandRegistry} with no mappings.
@@ -89,6 +90,9 @@ public class CommandRegistry {
 		}
 
 		commands.put(name, command);
+		if (listeners != null) {
+			listeners.forEach(l -> l.commandRegistered(command));
+		}
 		CommandClient.LOGGER.info("Registered command \"" + name + "\"");
 	}
 
@@ -131,6 +135,9 @@ public class CommandRegistry {
 					new IllegalArgumentException("Alias \"" + alias + "\" is the name of a registered command."));
 		}
 		aliases.put(alias.toLowerCase(), command.getName().toLowerCase());
+		if (listeners != null) {
+			listeners.forEach(l -> l.aliasRegistered(alias, command));
+		}
 		CommandClient.LOGGER.info("Registered alias \"" + alias + "\" for command: " + command.getName());
 	}
 
@@ -191,7 +198,11 @@ public class CommandRegistry {
 	 * @return the command name previously associated with the given alias.
 	 */
 	public synchronized String unregisterAlias(String alias) {
-		return aliases.remove(alias.toLowerCase());
+		String removed = aliases.remove(alias.toLowerCase());
+		if (listeners != null && removed != null && commands.containsKey(removed)) {
+			listeners.forEach(l -> l.aliasUnregistered(alias, commands.get(removed)));
+		}
+		return removed;
 	}
 
 	/**
@@ -235,6 +246,9 @@ public class CommandRegistry {
 		ICommand command = commands.remove(name.toLowerCase());
 		if (command != null) {
 			CommandClient.LOGGER.info("Unregistered command: " + command.getName());
+			if (listeners != null) {
+				listeners.forEach(l -> l.commandUnregistered(command));
+			}
 		}
 		return command;
 	}
@@ -359,5 +373,17 @@ public class CommandRegistry {
 	 */
 	public synchronized Map<String, String> getAliasesMapping() {
 		return Collections.unmodifiableMap(aliases);
+	}
+
+	/**
+	 * Adds the given event listener.
+	 * 
+	 * @param listener the listener.
+	 */
+	public void addListener(CommandRegisterListener listener) {
+		if (listeners == null) {
+			listeners = new ArrayList<CommandRegisterListener>();
+		}
+		listeners.add(listener);
 	}
 }
