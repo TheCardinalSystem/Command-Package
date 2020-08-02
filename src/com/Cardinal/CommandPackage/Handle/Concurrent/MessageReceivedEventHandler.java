@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -47,22 +48,25 @@ public class MessageReceivedEventHandler extends Thread {
 	private CommandRegistry registry;
 	private BiConsumer<Exception, MessageReceivedEvent> biConsumer = null;
 	public long startTime = 0;
+	private boolean logMessages;
 	/**
 	 * That's one big ass variable name.
 	 */
 	private static final Pattern NUMBER_FORMAT_EXCEPTION_EXTRACTION_PATTERN = Pattern
 			.compile("(?<=\\:\\s\\\").+(?=\\\"$)");
 
-	public MessageReceivedEventHandler(MessageReceivedEvent event) {
+	public MessageReceivedEventHandler(MessageReceivedEvent event, boolean logMessages) {
 		super("MessageReceivedEventHandler:" + event.getAuthor().getName() + ":" + event.hashCode());
 		this.event = event;
+		this.logMessages = logMessages;
 	}
 
-	public MessageReceivedEventHandler(MessageReceivedEvent event,
+	public MessageReceivedEventHandler(MessageReceivedEvent event, boolean logMessages,
 			BiConsumer<Exception, MessageReceivedEvent> errorHandler) {
 		super("MessageReceivedEventHandler:" + event.getAuthor().getName() + ":" + event.hashCode());
 		this.event = event;
 		this.biConsumer = errorHandler;
+		this.logMessages = logMessages;
 	}
 
 	public MessageReceivedEvent getEvent() {
@@ -92,9 +96,19 @@ public class MessageReceivedEventHandler extends Thread {
 				MessageReceivedEvent wrappedEvent = (MessageReceivedEvent) event;
 				setName("MessageHandler:" + ((MessageReceivedEvent) event).getMessageId());
 
+				SelfUser selfUser = wrappedEvent.getJDA().getSelfUser();
+				if (logMessages && wrappedEvent.getAuthor().equals(selfUser)) {
+					MessageChannel channel = wrappedEvent.getChannel();
+					CommandClient.LOGGER.info(selfUser.getAsTag() + " >> [" + channel.getName()
+							+ (channel.getType().equals(ChannelType.TEXT)
+									? " | " + wrappedEvent.getGuild().getName() + "]"
+									: "]")
+							+ " >> \"" + wrappedEvent.getMessage().getContentRaw() + "\"");
+				}
+
 				boolean isPrivate = event.getChannelType().equals(ChannelType.PRIVATE);
-				if ((event.getChannelType().equals(ChannelType.TEXT) || isPrivate)
-						&& checkChannel(event.getChannel(), isPrivate ? null : event.getGuild(), event.getAuthor())) {
+				if ((event.getChannelType().equals(ChannelType.TEXT) || isPrivate) && checkChannel(event.getChannel(),
+						isPrivate ? null : event.getGuild(), event.getAuthor(), event.getJDA().getSelfUser())) {
 					String prefix = getPrefix(wrappedEvent);
 
 					String message = wrappedEvent.getMessage().getContentRaw();
@@ -177,11 +191,11 @@ public class MessageReceivedEventHandler extends Thread {
 		}
 	}
 
-	private boolean checkChannel(MessageChannel channel, Guild guild, User user) {
+	private boolean checkChannel(MessageChannel channel, Guild guild, User user, SelfUser selfUser) {
 		String botChannel = channel.getType().equals(ChannelType.PRIVATE) ? channel.getId()
 				: PropertiesHandler.<String>getGuildProperty(guild, GuildProperties.BOT_CHANNEL);
 
-		if (!user.isBot() && (botChannel == null || botChannel.equals(channel.getId())
+		if ((!user.isBot() || user.equals(selfUser)) && (botChannel == null || botChannel.equals(channel.getId())
 				|| CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId()))) {
 			return true;
 		}
@@ -426,7 +440,8 @@ public class MessageReceivedEventHandler extends Thread {
 	}
 
 	private boolean canAcess(MessageReceivedEvent event, ICommand command, CommandRegistry registry) {
-		if (CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId())) {
+		if (CommandClient.DEVELOPER_IDS.contains(event.getAuthor().getId())
+				|| event.getJDA().getSelfUser().equals(event.getAuthor())) {
 			return true;
 		}
 		if (event.getChannelType().equals(ChannelType.PRIVATE)) {

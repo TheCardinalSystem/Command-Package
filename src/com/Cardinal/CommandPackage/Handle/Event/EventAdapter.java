@@ -40,23 +40,26 @@ public class EventAdapter implements EventListener {
 	private int poolSize;
 	private long timeout;
 	private BiConsumer<Exception, MessageReceivedEvent> errorHandler = null;
+	private boolean logMessages;
 
 	public EventAdapter(CommandRegistry registry, int maxThreadPoolSize, long listenerThreadTimeout,
-			EventListener... listeners) {
+			boolean logMessages, EventListener... listeners) {
 		this.registry = registry;
 		this.poolSize = maxThreadPoolSize / 2;
 		this.timeout = listenerThreadTimeout;
 		this.listeners.addAll(Arrays.asList(listeners));
+		this.logMessages = logMessages;
 		pool = new EventHandlerPool(this.registry, poolSize);
 	}
 
 	public EventAdapter(CommandRegistry registry, BiConsumer<Exception, MessageReceivedEvent> errorHandler,
-			int maxThreadPoolSize, long listenerThreadTimeout, EventListener... listeners) {
+			int maxThreadPoolSize, long listenerThreadTimeout, boolean logMessages, EventListener... listeners) {
 		this.errorHandler = errorHandler;
 		this.registry = registry;
 		this.poolSize = maxThreadPoolSize / 2;
 		this.timeout = listenerThreadTimeout;
 		this.listeners.addAll(Arrays.asList(listeners));
+		this.logMessages = logMessages;
 		pool = new EventHandlerPool(this.registry, poolSize);
 	}
 
@@ -77,8 +80,8 @@ public class EventAdapter implements EventListener {
 	}
 
 	public void onMessageEvent(MessageReceivedEvent event) {
-		pool.add(errorHandler == null ? new MessageReceivedEventHandler(event)
-				: new MessageReceivedEventHandler(event, errorHandler));
+		pool.add(errorHandler == null ? new MessageReceivedEventHandler(event, logMessages)
+				: new MessageReceivedEventHandler(event, logMessages, errorHandler));
 		if (pool.getState().equals(State.NEW))
 			pool.start();
 	}
@@ -176,6 +179,5 @@ public class EventAdapter implements EventListener {
 		}
 
 	}
-
 
 }

@@ -19,11 +19,15 @@ import javax.security.auth.login.LoginException;
 import com.Cardinal.CommandPackage.Command.ICommand;
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Event.EventAdapter;
+import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 
@@ -75,25 +79,34 @@ public class CommandClient {
 	 */
 	private CommandClient(String token, CommandRegistry registry, File workingDirectory, int maxThreadPoolSize,
 			long timeout, EventListener[] listeners, BiConsumer<Exception, MessageReceivedEvent> errorHandler,
-			String[] developers) throws LoginException, InterruptedException {
+			String[] developers, boolean logMessages) throws LoginException, InterruptedException {
 		PropertiesHandler.init(workingDirectory);
 
 		jda = new JDABuilder().setToken(token).build().awaitReady();
 		DEVELOPER_IDS = Arrays.asList(developers);
 		DEFAULT_PREFIX = jda.getSelfUser().getAsMention().replaceFirst("!", "");
 		this.registry = registry;
-		adapter = errorHandler == null ? new EventAdapter(registry, maxThreadPoolSize, timeout, listeners)
-				: new EventAdapter(registry, errorHandler, maxThreadPoolSize, timeout, listeners);
+		adapter = errorHandler == null ? new EventAdapter(registry, maxThreadPoolSize, timeout, logMessages, listeners)
+				: new EventAdapter(registry, errorHandler, maxThreadPoolSize, timeout, logMessages, listeners);
 		jda.addEventListener(adapter);
 	}
 
 	/**
-	 * Gets this bot's JDA instance.
+	 * Gets this bot's {@link JDA} instance.
 	 * 
 	 * @return the JDA.
 	 */
 	public JDA getJDA() {
 		return jda;
+	}
+
+	/**
+	 * Get's this bot's {@link CommandRegistry} instance.
+	 * 
+	 * @return
+	 */
+	public CommandRegistry getRegistry() {
+		return registry;
 	}
 
 	/**
@@ -148,6 +161,27 @@ public class CommandClient {
 	}
 
 	/**
+	 * Dispatches the given command in the given channel as the bot user.
+	 * 
+	 * @param command the command to dispatch (with any arguments)
+	 * @param channel the channel
+	 */
+	public void dispatchCommand(String command, MessageChannel channel) {
+		if (channel instanceof TextChannel) {
+			String prefix;
+			if (!channel.getType().equals(ChannelType.PRIVATE)) {
+				String obj = PropertiesHandler.<String>getGuildProperty(((TextChannel) channel).getGuild(),
+						GuildProperties.PREFIX);
+				prefix = obj == null ? CommandClient.DEFAULT_PREFIX : obj;
+			} else {
+				prefix = "";
+			}
+			command = prefix.toLowerCase() + command;
+		}
+		channel.sendMessage(command).queue();
+	}
+
+	/**
 	 * A class used for building a {@link CommandClient} instance with chaining.
 	 * 
 	 * @author Cardinal System
@@ -160,6 +194,7 @@ public class CommandClient {
 		private CommandRegistry registry;
 		private File directory;
 		private BiConsumer<Exception, MessageReceivedEvent> consumer;
+		private boolean logMessages = false;
 		/**
 		 * The maximum number of the threads that can be running at any given time.
 		 */
@@ -261,6 +296,18 @@ public class CommandClient {
 			return this;
 		}
 
+		/**
+		 * If true, all messages sent by this bot will be logged in
+		 * {@link CommandClient#LOGGER}.
+		 * 
+		 * @param toggle true/false
+		 * @return this, for chaining.
+		 */
+		public CommandClientBuilder logBotMessages(boolean toggle) {
+			logMessages = toggle;
+			return this;
+		}
+
 		public CommandClient build() throws IllegalStateException, LoginException, InterruptedException {
 			if (token == null)
 				throw new IllegalStateException("Cannot build without a token.");
@@ -269,7 +316,7 @@ public class CommandClient {
 
 			return new CommandClient(token, registry, directory, maxThreadPoolSize, timeout,
 					listeners.toArray(new EventListener[listeners.size()]), consumer,
-					devs.toArray(new String[devs.size()]));
+					devs.toArray(new String[devs.size()]), logMessages);
 		}
 	}
 
