@@ -5,9 +5,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,6 +26,7 @@ import com.Cardinal.CommandPackage.Handle.Properties.GuildProperties;
 import com.Cardinal.CommandPackage.Handle.Properties.PropertiesHandler;
 
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -30,6 +34,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 
 public class CommandClient {
 
@@ -38,6 +43,7 @@ public class CommandClient {
 	public static List<String> DEVELOPER_IDS;
 
 	private JDA jda;
+	private JDABuilder builder;
 	private CommandRegistry registry;
 	private EventAdapter adapter;
 
@@ -79,10 +85,12 @@ public class CommandClient {
 	 */
 	private CommandClient(String token, CommandRegistry registry, File workingDirectory, int maxThreadPoolSize,
 			long timeout, EventListener[] listeners, BiConsumer<Exception, MessageReceivedEvent> errorHandler,
-			String[] developers, boolean logMessages) throws LoginException, InterruptedException {
+			String[] developers, boolean logMessages, Collection<GatewayIntent> intents)
+			throws LoginException, InterruptedException {
 		PropertiesHandler.init(workingDirectory);
 
-		jda = new JDABuilder().setToken(token).build().awaitReady();
+		builder = intents.isEmpty() ? JDABuilder.createDefault(token) : JDABuilder.create(token, intents);
+		jda = builder.build().awaitReady();
 		DEVELOPER_IDS = Arrays.asList(developers);
 		DEFAULT_PREFIX = jda.getSelfUser().getAsMention().replaceFirst("!", "");
 		this.registry = registry;
@@ -103,7 +111,7 @@ public class CommandClient {
 	/**
 	 * Get's this bot's {@link CommandRegistry} instance.
 	 * 
-	 * @return
+	 * @return the registry.
 	 */
 	public CommandRegistry getRegistry() {
 		return registry;
@@ -182,6 +190,78 @@ public class CommandClient {
 	}
 
 	/**
+	 * Shuts down this bot. If 'now' is true, this shutdown instantly and will also
+	 * cancel all queued {@link net.dv8tion.jda.api.requests.RestAction
+	 * RestActions}.
+	 * 
+	 * @param now   now
+	 * @param block tells the thread whether or not to wait until the shutdown is
+	 *              complete.
+	 * @throws InterruptedException if the thread wait times out.
+	 */
+	public void shutdown(boolean now, boolean block) throws InterruptedException {
+		Object threadLock;
+		Thread thread = null;
+		if (block) {
+			threadLock = new Object();
+			thread = new Thread(() -> {
+				synchronized (threadLock) {
+					try {
+						threadLock.wait(8000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			thread.start();
+			adapter.addShutdownConsumer(e -> {
+				synchronized (threadLock) {
+					threadLock.notifyAll();
+				}
+			});
+		}
+
+		if (now)
+			jda.shutdownNow();
+		else
+			jda.shutdown();
+
+		if (thread != null)
+			thread.join(5000);
+	}
+
+	/**
+	 * Shuts down the internal {@link JDA} instance, if it is not already shutdown,
+	 * and then starts it back up again. This method blocks until the process is
+	 * complete.
+	 * 
+	 * @param now if true, this will shutdown the JDA instance instantly and will
+	 *            also cancel all queued
+	 *            {@link net.dv8tion.jda.api.requests.RestAction RestActions}.
+	 * @throws InterruptedException If this thread wait times out.
+	 * @throws LoginException       If the provided token is invalid.
+	 */
+	public void reboot(boolean now) throws LoginException, InterruptedException {
+		/*
+		 * Object threadLock = new Object(); Thread thread = new Thread(() -> { if
+		 * (!jda.getStatus().equals(Status.SHUTDOWN) &&
+		 * !jda.getStatus().equals(Status.SHUTTING_DOWN)) { shutdown(now, false); }
+		 * synchronized (threadLock) { try { threadLock.wait(); } catch
+		 * (InterruptedException e) { e.printStackTrace(); } } }); thread.start();
+		 * adapter.addShutdownConsumer(t -> { while
+		 * (!thread.getState().equals(State.WAITING)) try { Thread.sleep(1); } catch
+		 * (InterruptedException e) { e.printStackTrace(); } synchronized (threadLock) {
+		 * threadLock.notifyAll(); } }); try { thread.join(); } catch
+		 * (InterruptedException e) { e.printStackTrace(); }
+		 */
+
+		if (!jda.getStatus().equals(Status.SHUTDOWN) && !jda.getStatus().equals(Status.SHUTTING_DOWN)) {
+			shutdown(now, true);
+		}
+		jda = builder.build().awaitReady();
+	}
+
+	/**
 	 * A class used for building a {@link CommandClient} instance with chaining.
 	 * 
 	 * @author Cardinal System
@@ -195,6 +275,8 @@ public class CommandClient {
 		private File directory;
 		private BiConsumer<Exception, MessageReceivedEvent> consumer;
 		private boolean logMessages = false;
+		private Set<GatewayIntent> intents = new HashSet<GatewayIntent>();
+
 		/**
 		 * The maximum number of the threads that can be running at any given time.
 		 */
@@ -274,6 +356,18 @@ public class CommandClient {
 		}
 
 		/**
+		 * Adds a {@link GatewayIntent} to be added to the bot intents once it is
+		 * constructed.
+		 * 
+		 * @param intent an intent.
+		 * @return this, for chaining.
+		 */
+		public CommandClientBuilder withIntent(GatewayIntent intent) {
+			intents.add(intent);
+			return this;
+		}
+
+		/**
 		 * Sets the directory where the entire bot will work from.
 		 * 
 		 * @param directory the directory.
@@ -316,7 +410,7 @@ public class CommandClient {
 
 			return new CommandClient(token, registry, directory, maxThreadPoolSize, timeout,
 					listeners.toArray(new EventListener[listeners.size()]), consumer,
-					devs.toArray(new String[devs.size()]), logMessages);
+					devs.toArray(new String[devs.size()]), logMessages, intents);
 		}
 	}
 

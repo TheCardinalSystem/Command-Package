@@ -23,19 +23,12 @@ public class WaitingEventHandler extends Thread {
 	private GenericEvent event;
 	private Set<EventListener> listeners;
 	private long timeout;
-	public long startTime;
 
 	public WaitingEventHandler(GenericEvent event, long timeout, Set<EventListener> listeners) {
 		super("WaitingEventHandler:" + event.getClass().getSimpleName() + ":" + event.hashCode());
 		this.event = event;
 		this.listeners = listeners;
 		this.timeout = timeout;
-	}
-
-	@Override
-	public synchronized void start() {
-		startTime = System.nanoTime();
-		super.start();
 	}
 
 	@Override

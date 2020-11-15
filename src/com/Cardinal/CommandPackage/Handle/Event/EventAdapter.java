@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.Cardinal.CommandPackage.Handle.Command.CommandRegistry;
 import com.Cardinal.CommandPackage.Handle.Concurrent.EventHandlerPool;
@@ -20,6 +21,7 @@ import com.Cardinal.CommandPackage.Util.ReactionUtils;
 
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
@@ -36,6 +38,7 @@ public class EventAdapter implements EventListener {
 	private CommandRegistry registry;
 	private EventHandlerPool pool;
 	private Set<EventListener> listeners = new HashSet<EventListener>();
+	private Set<Consumer<ShutdownEvent>> consumers = new HashSet<Consumer<ShutdownEvent>>();
 	private ArrayDeque<GenericEvent> deque = new ArrayDeque<GenericEvent>();
 	private int poolSize;
 	private long timeout;
@@ -77,6 +80,18 @@ public class EventAdapter implements EventListener {
 
 	public Set<EventListener> getEventListeners() {
 		return Collections.unmodifiableSet(listeners);
+	}
+
+	public boolean addShutdownConsumer(Consumer<ShutdownEvent> consumer) {
+		return consumers.add(consumer);
+	}
+
+	public boolean removeShutdownConsumer(Consumer<ShutdownEvent> consumer) {
+		return consumers.remove(consumer);
+	}
+
+	public Set<Consumer<ShutdownEvent>> getShutdownConsumers() {
+		return Collections.unmodifiableSet(consumers);
 	}
 
 	public void onMessageEvent(MessageReceivedEvent event) {
@@ -134,6 +149,10 @@ public class EventAdapter implements EventListener {
 		}
 	}
 
+	public void onShutdownEvent(ShutdownEvent event) {
+		consumers.forEach(c -> c.accept(event));
+	}
+
 	@Override
 	public void onEvent(GenericEvent event) {
 		if (pool.isDraining()) {
@@ -155,7 +174,7 @@ public class EventAdapter implements EventListener {
 	}
 
 	private void queueEvent(GenericEvent event) {
-		WaitingEventHandler handler = startWaitingHandler(event);
+		startWaitingHandler(event);
 
 		if (event instanceof MessageReceivedEvent) {
 			onMessageEvent((MessageReceivedEvent) event);
@@ -163,8 +182,11 @@ public class EventAdapter implements EventListener {
 			onReactionAddEvent((MessageReactionAddEvent) event);
 		} else if (event instanceof TextChannelDeleteEvent) {
 			onTextChannelDeletionEvent((TextChannelDeleteEvent) event);
-		} else {
-			handler.interrupt();
+		} else if (event instanceof ShutdownEvent) {
+			onShutdownEvent((ShutdownEvent) event);}else{
+			synchronized (event) {
+				event.notifyAll();
+			}
 		}
 	}
 
